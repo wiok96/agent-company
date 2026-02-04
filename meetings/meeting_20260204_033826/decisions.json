@@ -1,0 +1,54 @@
+{
+  "decisions": [
+    {
+      "id": "decision_20260204_053826_001",
+      "title": "اقتراح 1",
+      "description": "قرار بشأن: اقتراح 1",
+      "votes": {
+        "ceo": "موافق",
+        "pm": "موافق",
+        "cto": "موافق",
+        "developer": "موافق",
+        "qa": "محايد",
+        "marketing": "موافق",
+        "finance": "موافق",
+        "critic": "محايد",
+        "chair": "موافق"
+      },
+      "outcome": "approved",
+      "voting_details": {
+        "outcome": "approved",
+        "approval_percentage": 79.4392523364486,
+        "total_votes": 9,
+        "vote_breakdown": {
+          "موافق": 7,
+          "محايد": 2
+        },
+        "total_weight": 10.7,
+        "positive_weight": 8.5
+      },
+      "roi": {
+        "estimated_cost": 1500,
+        "projected_revenue": 5000,
+        "roi_percentage": 233.3,
+        "development_time_weeks": 3,
+        "market_size": "متوسط",
+        "competition_level": "متوسط",
+        "monetization_strategy": "غير محدد",
+        "assumptions": [
+          "تقديرات بناءً على مشاريع مماثلة في السوق",
+          "تشمل تكاليف التطوير الأساسية فقط",
+          "تفترض تسويق بسيط وعضوي",
+          "العائد متوقع خلال 6-12 شهر"
+        ]
+      },
+      "action_items": [
+        "إنشاء مستودع GitHub لمشروع اقتراح 1",
+        "كتابة مواصفات تقنية مفصلة",
+        "تطوير النموذج الأولي الأول",
+        "إنشاء اختبارات أساسية",
+        "توثيق طريقة الاستخدام"
+      ]
+    }
+  ]
+}

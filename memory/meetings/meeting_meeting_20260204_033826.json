@@ -1,0 +1,75 @@
+{
+  "id": "meeting_meeting_20260204_033826",
+  "timestamp": "2026-02-04T03:38:26.123993+00:00",
+  "type": "meeting",
+  "content": {
+    "session_id": "meeting_20260204_033826",
+    "meeting_data": {
+      "session_id": "meeting_20260204_033826",
+      "timestamp": "2026-02-04T03:38:26.096928+00:00",
+      "agenda": "اختبار المشاريع المحسنة",
+      "participants": [
+        "ceo",
+        "pm",
+        "cto",
+        "developer",
+        "qa",
+        "marketing",
+        "finance",
+        "critic",
+        "chair",
+        "memory"
+      ],
+      "debug_mode": true
+    },
+    "transcript_summary": {
+      "message_count": 23,
+      "message_types": {
+        "opening": 1,
+        "contribution": 10,
+        "proposal": 1,
+        "vote": 9,
+        "closing": 2
+      },
+      "agent_participation": {
+        "chair": 6,
+        "ceo": 2,
+        "pm": 2,
+        "cto": 2,
+        "developer": 2,
+        "qa": 2,
+        "marketing": 2,
+        "finance": 2,
+        "critic": 2,
+        "memory": 1
+      },
+      "duration_estimated": "46 دقيقة",
+      "key_topics": [
+        "مشروع"
+      ]
+    },
+    "participants": [
+      "ceo",
+      "pm",
+      "cto",
+      "developer",
+      "qa",
+      "marketing",
+      "finance",
+      "critic",
+      "chair",
+      "memory"
+    ],
+    "agenda": "اختبار المشاريع المحسنة",
+    "decisions_count": 1
+  },
+  "metadata": {
+    "source": "meeting_orchestrator",
+    "transcript_length": 23
+  },
+  "tags": [
+    "meeting",
+    "session",
+    "meeting_20260204_033826"
+  ]
+}

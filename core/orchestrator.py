@@ -159,7 +159,7 @@ class MeetingOrchestrator:
             )
     
     def _simulate_meeting(self, meeting_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """إجراء اجتماع حقيقي مع الوكلاء"""
+        """إجراء اجتماع حقيقي مع الوكلاء - يقترحون مشاريع بأنفسهم"""
         self.logger.info("🎭 بدء الاجتماع مع الوكلاء...")
         
         # إعادة تعيين الوكلاء للاجتماع الجديد
@@ -170,73 +170,151 @@ class MeetingOrchestrator:
         # 1. رسالة الافتتاح من رئيس الاجتماع
         opening_context = {
             "meeting_data": meeting_data,
-            "expected_response_type": "opening"
+            "expected_response_type": "opening",
+            "company_context": "نحن شركة هايتك متخصصة في الحلول التقنية المبتكرة"
         }
         
         opening_msg = self._create_agent_message(
             "chair", 
             opening_context, 
-            f"أهلاً وسهلاً بالجميع في اجتماع AACS. الأجندة اليوم: {meeting_data['agenda']}"
+            f"أهلاً وسهلاً بالجميع في اجتماع شركة هايتك. الأجندة اليوم: {meeting_data['agenda']}. كشركة تقنية رائدة، نحتاج لمناقشة مشاريع جديدة ومبتكرة."
         )
         transcript.append(opening_msg)
         
-        # 2. مناقشة الموضوع الرئيسي
-        discussion_topic = f"مناقشة: {meeting_data['agenda']}"
-        discussion_messages = self.agent_manager.conduct_discussion(
-            discussion_topic, 
-            {"meeting_type": "regular", "agenda": meeting_data['agenda']}
-        )
+        # 2. طلب اقتراحات من الوكلاء
+        brainstorm_context = {
+            "meeting_type": "brainstorming", 
+            "agenda": meeting_data['agenda'],
+            "company_type": "هايتك - حلول تقنية مبتكرة",
+            "expected_response_type": "project_suggestion"
+        }
         
-        # تحويل رسائل المناقشة إلى تنسيق المحضر
-        for msg in discussion_messages:
-            transcript.append({
-                "timestamp": msg.timestamp,
-                "agent": msg.agent_id,
-                "message": msg.content,
-                "type": msg.message_type
-            })
-        
-        # 3. اقتراح مشروع جديد
-        proposal = self._generate_project_proposal(meeting_data)
-        
-        proposal_msg = self._create_agent_message(
+        suggestion_msg = self._create_agent_message(
             "chair",
-            {"expected_response_type": "proposal"},
-            f"أقترح أن نصوت على: {proposal['title']}"
+            brainstorm_context,
+            "أريد من كل وكيل أن يقترح مشروع تقني مبتكر يناسب شركة هايتك. فكروا في مشاكل حقيقية يمكننا حلها."
         )
-        transcript.append(proposal_msg)
+        transcript.append(suggestion_msg)
         
-        # 4. التصويت على الاقتراح
-        votes = self.agent_manager.conduct_voting(proposal)
-        
-        for agent_id, vote in votes.items():
-            vote_msg = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "agent": agent_id,
-                "message": f"صوتي: {vote}",
-                "type": "vote"
+        # 3. جمع اقتراحات من جميع الوكلاء
+        project_suggestions = []
+        for agent_id in ["ceo", "cto", "developer", "pm", "marketing"]:  # الوكلاء الأكثر إبداعاً
+            suggestion_context = {
+                "meeting_type": "project_brainstorming",
+                "company_focus": "هايتك - تقنية مبتكرة",
+                "expected_response_type": "project_proposal",
+                "role_perspective": True
             }
-            transcript.append(vote_msg)
+            
+            suggestion = self._create_agent_message(
+                agent_id,
+                suggestion_context,
+                f"كـ{AGENT_ROLES[AGENT_ROLES.index(agent_id)]} في شركة هايتك، ما هو المشروع التقني المبتكر الذي تقترحه؟"
+            )
+            transcript.append(suggestion)
+            
+            # استخراج الاقتراح
+            if "أقترح" in suggestion["message"] or "مشروع" in suggestion["message"]:
+                project_suggestions.append({
+                    "agent": agent_id,
+                    "suggestion": suggestion["message"],
+                    "timestamp": suggestion["timestamp"]
+                })
         
-        # 5. إعلان النتيجة
-        voting_result = self.agent_manager.calculate_voting_result(votes)
+        # 4. مناقشة الاقتراحات
+        discussion_context = {
+            "meeting_type": "project_discussion",
+            "suggestions": project_suggestions,
+            "expected_response_type": "discussion"
+        }
         
-        result_msg = self._create_agent_message(
+        discussion_msg = self._create_agent_message(
             "chair",
-            {"expected_response_type": "closing"},
-            f"نتيجة التصويت: {voting_result['outcome']} بنسبة {voting_result['approval_percentage']:.1f}%"
+            discussion_context,
+            "الآن دعونا نناقش هذه الاقتراحات. كل وكيل يعطي رأيه في الاقتراحات المطروحة."
         )
-        transcript.append(result_msg)
+        transcript.append(discussion_msg)
         
-        # 6. الخاتمة
+        # 5. مناقشة من باقي الوكلاء
+        for agent_id in ["qa", "finance", "critic", "memory"]:
+            discussion_context_agent = {
+                "meeting_type": "project_evaluation",
+                "suggestions": project_suggestions,
+                "expected_response_type": "evaluation",
+                "role_perspective": True
+            }
+            
+            evaluation = self._create_agent_message(
+                agent_id,
+                discussion_context_agent,
+                f"ما رأيك في الاقتراحات المطروحة من منظور {agent_id}؟"
+            )
+            transcript.append(evaluation)
+        
+        # 6. اختيار أفضل اقتراح للتصويت
+        if project_suggestions:
+            # اختيار الاقتراح الأول للتصويت (يمكن تحسينه لاحقاً)
+            selected_suggestion = project_suggestions[0]
+            
+            voting_msg = self._create_agent_message(
+                "chair",
+                {"expected_response_type": "voting_call"},
+                f"بناءً على المناقشة، أقترح أن نصوت على: {selected_suggestion['suggestion'][:100]}..."
+            )
+            transcript.append(voting_msg)
+            
+            # 7. التصويت
+            proposal_for_voting = {
+                "title": self._extract_project_title(selected_suggestion['suggestion']),
+                "description": selected_suggestion['suggestion'],
+                "proposed_by": selected_suggestion['agent']
+            }
+            
+            votes = self.agent_manager.conduct_voting(proposal_for_voting)
+            
+            for agent_id, vote in votes.items():
+                vote_msg = {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "agent": agent_id,
+                    "message": f"صوتي: {vote}",
+                    "type": "vote",
+                    "proposal_context": proposal_for_voting
+                }
+                transcript.append(vote_msg)
+            
+            # 8. إعلان النتيجة
+            voting_result = self.agent_manager.calculate_voting_result(votes)
+            
+            result_msg = self._create_agent_message(
+                "chair",
+                {"expected_response_type": "result"},
+                f"نتيجة التصويت: {voting_result['outcome']} بنسبة {voting_result['approval_percentage']:.1f}%"
+            )
+            transcript.append(result_msg)
+        
+        # 9. الخاتمة
         closing_msg = self._create_agent_message(
             "chair",
             {"expected_response_type": "closing"},
-            "شكراً للجميع على المشاركة الفعالة. تم إنهاء الاجتماع."
+            "شكراً للجميع على الأفكار المبتكرة والمناقشة البناءة. هذا ما نتوقعه من شركة هايتك الرائدة."
         )
         transcript.append(closing_msg)
         
         return transcript
+    
+    def _extract_project_title(self, suggestion_text: str) -> str:
+        """استخراج عنوان المشروع من اقتراح الوكيل"""
+        # البحث عن أنماط شائعة
+        if "أقترح" in suggestion_text:
+            parts = suggestion_text.split("أقترح")
+            if len(parts) > 1:
+                title_part = parts[1].strip()
+                # أخذ أول جملة
+                title = title_part.split('.')[0].split('،')[0]
+                return title[:80]  # تحديد الطول
+        
+        # إذا لم نجد نمط واضح، نأخذ أول 50 حرف
+        return suggestion_text[:50] + "..." if len(suggestion_text) > 50 else suggestion_text
     
     def _create_agent_message(self, agent_id: str, context: Dict[str, Any], default_content: str) -> Dict[str, Any]:
         """إنشاء رسالة من وكيل محدد"""
@@ -259,41 +337,72 @@ class MeetingOrchestrator:
         }
     
     def _generate_project_proposal(self, meeting_data: Dict[str, Any]) -> Dict[str, Any]:
-        """توليد اقتراح مشروع بناءً على الأجندة"""
+        """توليد اقتراح مشروع حقيقي ومفيد بناءً على الأجندة"""
         
-        # قوالب مشاريع بسيطة للنسخة V0
-        project_templates = [
+        # مشاريع حقيقية ومفيدة للنسخة V0
+        real_projects = [
             {
-                "title": "تطوير أداة إدارة المهام البسيطة",
-                "description": "بناء تطبيق ويب بسيط لإدارة المهام والمشاريع الصغيرة",
-                "type": "web_app"
+                "title": "تطوير أداة مراقبة الخوادم البسيطة",
+                "description": "بناء أداة CLI تراقب حالة الخوادم وترسل تنبيهات عند المشاكل",
+                "type": "monitoring_tool",
+                "tech_stack": "Python + FastAPI + SQLite",
+                "target_users": "مطوري DevOps والشركات الصغيرة",
+                "problem_solved": "مراقبة الخوادم بدون أدوات معقدة ومكلفة"
             },
             {
-                "title": "إنشاء مكتبة Python مفيدة",
-                "description": "تطوير مكتبة Python تحل مشكلة شائعة في التطوير",
-                "type": "library"
+                "title": "مكتبة Python لإدارة ملفات التكوين",
+                "description": "مكتبة تبسط قراءة وكتابة ملفات JSON/YAML/TOML مع التحقق من الصحة",
+                "type": "python_library",
+                "tech_stack": "Python + Pydantic + pytest",
+                "target_users": "مطوري Python",
+                "problem_solved": "تعقيد إدارة ملفات التكوين في المشاريع"
             },
             {
-                "title": "بناء أداة سطر أوامر",
-                "description": "تطوير أداة CLI تساعد المطورين في المهام اليومية",
-                "type": "cli_tool"
+                "title": "أداة تحليل استهلاك API البسيطة",
+                "description": "تطبيق ويب يحلل استهلاك APIs ويعرض إحصائيات مفيدة",
+                "type": "web_analytics",
+                "tech_stack": "Python + Flask + Chart.js",
+                "target_users": "مطوري APIs والشركات",
+                "problem_solved": "فهم أنماط استخدام APIs وتحسين الأداء"
             },
             {
-                "title": "تطوير إضافة متصفح بسيطة",
-                "description": "إنشاء إضافة متصفح تحسن تجربة المستخدم",
-                "type": "browser_extension"
+                "title": "إضافة متصفح لحفظ المقالات التقنية",
+                "description": "إضافة تحفظ المقالات التقنية مع تصنيف تلقائي وبحث ذكي",
+                "type": "browser_extension",
+                "tech_stack": "JavaScript + Chrome Extension API + IndexedDB",
+                "target_users": "المطورين والتقنيين",
+                "problem_solved": "تنظيم وإدارة المقالات التقنية المحفوظة"
+            },
+            {
+                "title": "أداة تحويل قواعد البيانات البسيطة",
+                "description": "أداة CLI تحول البيانات بين قواعد بيانات مختلفة (MySQL, PostgreSQL, SQLite)",
+                "type": "database_tool",
+                "tech_stack": "Python + SQLAlchemy + Click",
+                "target_users": "مطوري قواعد البيانات",
+                "problem_solved": "تعقيد نقل البيانات بين قواعد بيانات مختلفة"
+            },
+            {
+                "title": "منصة مشاركة الكود المؤقت",
+                "description": "موقع بسيط لمشاركة أجزاء الكود مع انتهاء صلاحية تلقائي",
+                "type": "web_platform",
+                "tech_stack": "Python + FastAPI + Redis + Vue.js",
+                "target_users": "المطورين والطلاب",
+                "problem_solved": "مشاركة الكود بسرعة وأمان بدون حسابات معقدة"
             }
         ]
         
-        # اختيار مشروع بناءً على الأجندة أو عشوائياً
+        # اختيار مشروع عشوائي
         import random
-        selected_template = random.choice(project_templates)
+        selected_project = random.choice(real_projects)
         
         return {
             "id": f"project_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-            "title": selected_template["title"],
-            "description": selected_template["description"],
-            "type": selected_template["type"],
+            "title": selected_project["title"],
+            "description": selected_project["description"],
+            "type": selected_project["type"],
+            "tech_stack": selected_project["tech_stack"],
+            "target_users": selected_project["target_users"],
+            "problem_solved": selected_project["problem_solved"],
             "proposed_by": "chair",
             "meeting_session": meeting_data.get("session_id", "unknown")
         }
@@ -305,13 +414,18 @@ class MeetingOrchestrator:
         # البحث عن الاقتراحات والتصويت
         proposals = [entry for entry in transcript if entry.get("type") == "proposal"]
         votes = {}
+        proposal_context = None
         
-        # جمع الأصوات
+        # جمع الأصوات وسياق المشروع
         for entry in transcript:
             if entry.get("type") == "vote":
                 agent_id = entry["agent"]
                 vote_text = entry["message"].replace("صوتي: ", "")
                 votes[agent_id] = vote_text
+                
+                # الحصول على سياق المشروع من أول صوت
+                if proposal_context is None and "proposal_context" in entry:
+                    proposal_context = entry["proposal_context"]
         
         # إنشاء قرار لكل اقتراح
         for i, proposal_entry in enumerate(proposals):
@@ -332,6 +446,7 @@ class MeetingOrchestrator:
                 "id": f"decision_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i+1:03d}",
                 "title": title,
                 "description": f"قرار بشأن: {title}",
+                "project_details": proposal_context if proposal_context else {},
                 "votes": votes,
                 "outcome": voting_result["outcome"],
                 "voting_details": voting_result,
@@ -343,87 +458,169 @@ class MeetingOrchestrator:
         return decisions
     
     def _calculate_simple_roi(self, project_title: str) -> Dict[str, Any]:
-        """حساب ROI بسيط للمشروع"""
+        """حساب ROI واقعي للمشروع بناءً على نوعه"""
         
-        # تقديرات بسيطة بناءً على نوع المشروع
-        roi_templates = {
-            "أداة إدارة المهام": {
-                "estimated_cost": 2000,
-                "projected_revenue": 8000,
-                "development_time_weeks": 4,
-                "market_size": "متوسط"
-            },
-            "مكتبة": {
-                "estimated_cost": 1000,
-                "projected_revenue": 3000,
-                "development_time_weeks": 2,
-                "market_size": "صغير"
-            },
-            "أداة سطر أوامر": {
-                "estimated_cost": 800,
-                "projected_revenue": 2000,
-                "development_time_weeks": 2,
-                "market_size": "صغير"
-            },
-            "إضافة متصفح": {
+        # تقديرات واقعية بناءً على نوع المشروع الفعلي
+        if "مراقبة الخوادم" in project_title:
+            roi_data = {
                 "estimated_cost": 1500,
                 "projected_revenue": 5000,
                 "development_time_weeks": 3,
-                "market_size": "متوسط"
+                "market_size": "متوسط - شركات DevOps",
+                "competition": "منخفض - أدوات بسيطة قليلة",
+                "monetization": "اشتراك شهري $10-20"
             }
-        }
-        
-        # اختيار القالب المناسب
-        selected_template = None
-        for key, template in roi_templates.items():
-            if key in project_title:
-                selected_template = template
-                break
-        
-        if not selected_template:
+        elif "مكتبة Python" in project_title:
+            roi_data = {
+                "estimated_cost": 800,
+                "projected_revenue": 2000,
+                "development_time_weeks": 2,
+                "market_size": "كبير - مطوري Python",
+                "competition": "عالي - مكتبات كثيرة",
+                "monetization": "مفتوح المصدر + دعم مدفوع"
+            }
+        elif "تحليل استهلاك API" in project_title:
+            roi_data = {
+                "estimated_cost": 2000,
+                "projected_revenue": 8000,
+                "development_time_weeks": 4,
+                "market_size": "متوسط - شركات APIs",
+                "competition": "متوسط - أدوات معقدة موجودة",
+                "monetization": "اشتراك $50-100 شهرياً"
+            }
+        elif "إضافة متصفح" in project_title:
+            roi_data = {
+                "estimated_cost": 1200,
+                "projected_revenue": 3000,
+                "development_time_weeks": 3,
+                "market_size": "كبير - المطورين والتقنيين",
+                "competition": "متوسط - إضافات مماثلة موجودة",
+                "monetization": "نسخة مجانية + premium $5/شهر"
+            }
+        elif "تحويل قواعد البيانات" in project_title:
+            roi_data = {
+                "estimated_cost": 1800,
+                "projected_revenue": 6000,
+                "development_time_weeks": 4,
+                "market_size": "صغير - مطوري قواعد البيانات",
+                "competition": "منخفض - أدوات معقدة فقط",
+                "monetization": "ترخيص تجاري + استشارات"
+            }
+        elif "مشاركة الكود" in project_title:
+            roi_data = {
+                "estimated_cost": 1000,
+                "projected_revenue": 4000,
+                "development_time_weeks": 2,
+                "market_size": "كبير - المطورين والطلاب",
+                "competition": "عالي - GitHub Gist وغيرها",
+                "monetization": "إعلانات + حسابات premium"
+            }
+        else:
             # قالب افتراضي
-            selected_template = roi_templates["أداة إدارة المهام"]
+            roi_data = {
+                "estimated_cost": 1500,
+                "projected_revenue": 5000,
+                "development_time_weeks": 3,
+                "market_size": "متوسط",
+                "competition": "متوسط",
+                "monetization": "غير محدد"
+            }
         
         # حساب ROI
-        cost = selected_template["estimated_cost"]
-        revenue = selected_template["projected_revenue"]
+        cost = roi_data["estimated_cost"]
+        revenue = roi_data["projected_revenue"]
         roi_percentage = ((revenue - cost) / cost) * 100 if cost > 0 else 0
         
         return {
             "estimated_cost": cost,
             "projected_revenue": revenue,
             "roi_percentage": round(roi_percentage, 1),
-            "development_time_weeks": selected_template["development_time_weeks"],
-            "market_size": selected_template["market_size"],
+            "development_time_weeks": roi_data["development_time_weeks"],
+            "market_size": roi_data["market_size"],
+            "competition_level": roi_data["competition"],
+            "monetization_strategy": roi_data["monetization"],
             "assumptions": [
-                "تقديرات أولية بناءً على مشاريع مماثلة",
-                "لا تشمل تكاليف التسويق والدعم",
-                "تفترض نجاح المشروع في السوق"
+                "تقديرات بناءً على مشاريع مماثلة في السوق",
+                "تشمل تكاليف التطوير الأساسية فقط",
+                "تفترض تسويق بسيط وعضوي",
+                "العائد متوقع خلال 6-12 شهر"
             ]
         }
     
     def _generate_action_items(self, project_title: str, outcome: str) -> List[str]:
-        """توليد عناصر العمل بناءً على القرار"""
+        """توليد عناصر عمل محددة وقابلة للتنفيذ بناءً على القرار"""
         
         if outcome == "approved":
-            return [
-                f"إنشاء مواصفات تفصيلية لـ {project_title}",
-                "تحديد الفريق المسؤول عن التنفيذ",
-                "وضع جدول زمني للتطوير",
-                "إعداد بيئة التطوير والأدوات",
-                "بدء مرحلة التصميم والتخطيط"
-            ]
+            # تحديد نوع المشروع من العنوان
+            if "مراقبة الخوادم" in project_title:
+                return [
+                    "إنشاء مستودع GitHub جديد للمشروع",
+                    "كتابة مواصفات API لمراقبة الخوادم",
+                    "تطوير نموذج أولي لمراقبة خادم واحد",
+                    "إنشاء قاعدة بيانات SQLite لحفظ البيانات",
+                    "تطوير واجهة CLI أساسية للتحكم"
+                ]
+            elif "مكتبة Python" in project_title:
+                return [
+                    "إنشاء هيكل مكتبة Python معياري",
+                    "كتابة وثائق API الأساسية",
+                    "تطوير وحدة قراءة ملفات JSON/YAML",
+                    "إنشاء اختبارات وحدة شاملة",
+                    "نشر النسخة الأولى على PyPI"
+                ]
+            elif "تحليل استهلاك API" in project_title:
+                return [
+                    "تصميم قاعدة بيانات لتخزين بيانات API",
+                    "تطوير نظام جمع البيانات من APIs",
+                    "إنشاء واجهة ويب بسيطة للعرض",
+                    "تطوير مخططات بيانية للإحصائيات",
+                    "إضافة نظام تنبيهات للاستهلاك العالي"
+                ]
+            elif "إضافة متصفح" in project_title:
+                return [
+                    "إنشاء manifest.json للإضافة",
+                    "تطوير واجهة popup للحفظ السريع",
+                    "إنشاء نظام تصنيف تلقائي للمقالات",
+                    "تطوير محرك بحث داخلي",
+                    "اختبار الإضافة على Chrome و Firefox"
+                ]
+            elif "تحويل قواعد البيانات" in project_title:
+                return [
+                    "تطوير محلل مخططات قواعد البيانات",
+                    "إنشاء نظام تحويل البيانات",
+                    "تطوير واجهة CLI مع معاملات",
+                    "إضافة دعم للجداول الكبيرة",
+                    "كتابة دليل استخدام مفصل"
+                ]
+            elif "مشاركة الكود" in project_title:
+                return [
+                    "تصميم قاعدة بيانات للكود المؤقت",
+                    "تطوير API لحفظ واسترجاع الكود",
+                    "إنشاء واجهة ويب بسيطة وسريعة",
+                    "تطوير نظام انتهاء الصلاحية التلقائي",
+                    "إضافة دعم لغات البرمجة المختلفة"
+                ]
+            else:
+                # مهام عامة للمشاريع غير المحددة
+                return [
+                    f"إنشاء مستودع GitHub لمشروع {project_title}",
+                    "كتابة مواصفات تقنية مفصلة",
+                    "تطوير النموذج الأولي الأول",
+                    "إنشاء اختبارات أساسية",
+                    "توثيق طريقة الاستخدام"
+                ]
         elif outcome == "rejected":
             return [
-                f"مراجعة أسباب رفض {project_title}",
-                "البحث عن بدائل أو تحسينات",
-                "إعادة تقييم الجدوى الاقتصادية",
-                "جمع المزيد من المعلومات"
+                f"مراجعة أسباب رفض مشروع {project_title}",
+                "البحث عن حلول بديلة أو تحسينات",
+                "إعادة تقييم الجدوى التقنية والاقتصادية",
+                "جمع المزيد من آراء المستخدمين المحتملين"
             ]
         else:
             return [
-                f"مراجعة إضافية لـ {project_title}",
-                "جمع المزيد من الآراء والمعلومات",
+                f"إجراء بحث إضافي حول مشروع {project_title}",
+                "جمع المزيد من المعلومات التقنية",
+                "تحليل المنافسين والحلول الموجودة",
                 "إعادة طرح الموضوع في الاجتماع القادم"
             ]
     

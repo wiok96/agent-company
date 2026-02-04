@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم AACS V0</title>
+    <title>لوحة تحكم AACS V0 - وضع مستقل</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,13 +15,23 @@
         <header class="header">
             <div class="header-content">
                 <h1 class="title">🤖 نظام الشركة البرمجية الذاتية</h1>
-                <p class="subtitle">AACS V0 - Autonomous AI Company System</p>
+                <p class="subtitle">AACS V0 - Autonomous AI Company System (وضع مستقل)</p>
                 <div class="status-indicator" id="systemStatus">
                     <span class="status-dot"></span>
                     <span class="status-text">جاري التحميل...</span>
                 </div>
             </div>
         </header>
+
+        <!-- Notice -->
+        <div class="card" style="background: #fef5e7; border-left: 4px solid #d69e2e;">
+            <h3 style="color: #d69e2e; margin-bottom: 10px;">📋 وضع العرض التوضيحي</h3>
+            <p style="color: #744210;">
+                هذه نسخة مستقلة من لوحة التحكم تعمل بدون خادم محلي. 
+                للحصول على التجربة الكاملة مع تحميل البيانات الحقيقية، يرجى استخدام:
+                <code style="background: #fff; padding: 2px 6px; border-radius: 4px;">start-dashboard.bat</code>
+            </p>
+        </div>
 
         <!-- Main Dashboard -->
         <main class="main-content">
@@ -37,9 +47,9 @@
                         <span class="btn-icon">🔄</span>
                         <span class="btn-text">تحديث البيانات</span>
                     </button>
-                    <button class="action-btn secondary" onclick="viewLogs()">
-                        <span class="btn-icon">📋</span>
-                        <span class="btn-text">عرض السجلات</span>
+                    <button class="action-btn secondary" onclick="clearLocalData()">
+                        <span class="btn-icon">🗑️</span>
+                        <span class="btn-text">مسح البيانات المحلية</span>
                     </button>
                 </div>
             </section>
@@ -58,7 +68,7 @@
                     </div>
                     <div class="status-item">
                         <div class="status-label">حالة التشغيل</div>
-                        <div class="status-value" id="runStatus">جاري التحميل...</div>
+                        <div class="status-value" id="runStatus">وضع العرض التوضيحي</div>
                     </div>
                     <div class="status-item">
                         <div class="status-label">عدد الوكلاء</div>
@@ -133,7 +143,7 @@
                 <button class="close-btn" onclick="closeMeetingModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p>سيتم توجيهك إلى GitHub Actions لتشغيل الاجتماع يدوياً.</p>
+                <p>سيتم إنشاء اجتماع تجريبي مع مهام جديدة.</p>
                 <div class="form-group">
                     <label for="meetingAgenda">أجندة الاجتماع:</label>
                     <input type="text" id="meetingAgenda" value="اجتماع يدوي من لوحة التحكم" />
@@ -153,5 +163,18 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        // Add clear local data function
+        function clearLocalData() {
+            if (confirm('هل أنت متأكد من مسح جميع البيانات المحلية؟')) {
+                localStorage.removeItem('aacs_tasks');
+                localStorage.removeItem('aacs_meetings');
+                showNotification('تم مسح البيانات المحلية', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            }
+        }
+    </script>
 </body>
 </html>

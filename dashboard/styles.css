@@ -209,6 +209,44 @@ body {
 }
 
 /* Task Board */
+.task-board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.task-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    background: #f7fafc;
+    color: #4a5568;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.filter-btn:hover {
+    background: #edf2f7;
+    border-color: #cbd5e0;
+}
+
+.filter-btn.active {
+    background: #4299e1;
+    color: white;
+    border-color: #4299e1;
+}
+
 .board-columns {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -241,17 +279,260 @@ body {
     margin-bottom: 10px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.task-item:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.task-item.enhanced {
+    border-left: 4px solid #4299e1;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    gap: 10px;
 }
 
 .task-title {
     font-weight: 500;
     color: #2d3748;
-    margin-bottom: 5px;
+    flex: 1;
+    line-height: 1.4;
+}
+
+.task-actions {
+    flex-shrink: 0;
+}
+
+.task-status-select {
+    padding: 4px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    background: white;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.task-status-select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.1);
 }
 
 .task-meta {
     font-size: 0.8rem;
     color: #718096;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.task-priority {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.task-priority.priority-high {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.task-priority.priority-medium {
+    background: #fef5e7;
+    color: #d69e2e;
+}
+
+.task-priority.priority-low {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+/* Project Groups */
+.project-group {
+    margin-bottom: 30px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.project-title {
+    background: #4299e1;
+    color: white;
+    padding: 15px 20px;
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.project-tasks {
+    padding: 20px;
+    background: white;
+}
+
+.project-tasks .board-columns {
+    gap: 15px;
+}
+
+.project-tasks .board-column {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.project-tasks .column-title {
+    font-size: 1rem;
+    color: #495057;
+}
+
+/* Enhanced Meeting Items */
+.meeting-item {
+    padding: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #f7fafc;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.meeting-item:hover {
+    background: #edf2f7;
+    transform: translateX(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.meeting-title {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.meeting-meta {
+    font-size: 0.9rem;
+    color: #718096;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.meeting-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.meeting-details-btn {
+    padding: 4px 12px;
+    background: #4299e1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.meeting-details-btn:hover {
+    background: #3182ce;
+}
+
+/* Enhanced Modal */
+.modal-content.large {
+    max-width: 800px;
+    width: 95%;
+}
+
+.meeting-details {
+    margin-bottom: 20px;
+}
+
+.detail-row {
+    display: flex;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 15px;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row strong {
+    min-width: 120px;
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge.completed {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.status-badge.in_progress {
+    background: #fef5e7;
+    color: #d69e2e;
+}
+
+.meeting-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Notification System */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+    background: #48bb78;
+}
+
+.notification.error {
+    background: #e53e3e;
+}
+
+.notification.info {
+    background: #4299e1;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* Agents Grid */
@@ -461,6 +742,60 @@ body {
     .agents-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    
+    .task-board-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .task-filters {
+        justify-content: center;
+    }
+    
+    .filter-btn {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+    
+    .task-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .task-actions {
+        align-self: stretch;
+    }
+    
+    .task-status-select {
+        width: 100%;
+    }
+    
+    .meeting-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .meeting-actions {
+        justify-content: center;
+    }
+    
+    .modal-content.large {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .detail-row strong {
+        min-width: auto;
+    }
 }
 
 @media (max-width: 480px) {
@@ -470,5 +805,31 @@ body {
     
     .agents-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .task-filters {
+        flex-direction: column;
+    }
+    
+    .filter-btn {
+        text-align: center;
+    }
+    
+    .project-title {
+        font-size: 1rem;
+        padding: 12px 15px;
+    }
+    
+    .project-tasks {
+        padding: 15px;
+    }
+    
+    .meeting-actions {
+        flex-direction: column;
+    }
+    
+    .meeting-details-btn {
+        width: 100%;
+        text-align: center;
     }
 }

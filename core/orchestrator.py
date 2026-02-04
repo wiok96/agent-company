@@ -13,6 +13,9 @@ from .logger import setup_logger, SecureLogger
 from .memory import MemorySystem
 from .artifact_validator import ArtifactValidator
 from .notification_manager import NotificationManager
+from .failure_library import FailureLibrary
+from .security_manager import SecurityManager
+from .github_issues_manager import GitHubIssuesManager
 from agents.agent_manager import AgentManager
 from agents.base_agent import Message
 
@@ -49,9 +52,15 @@ class MeetingOrchestrator:
         
         # إنشاء مدير الوكلاء ونظام الذاكرة ومدقق المخرجات ومدير الإشعارات
         self.memory_system = MemorySystem(config)
-        self.agent_manager = AgentManager(config, self.memory_system)
+        self.security_manager = SecurityManager(config)
+        self.failure_library = FailureLibrary(config, self.memory_system)
+        self.github_issues_manager = GitHubIssuesManager(config)
+        self.agent_manager = AgentManager(config, self.memory_system, self.failure_library)
         self.artifact_validator = ArtifactValidator(config)
         self.notification_manager = NotificationManager(config)
+        
+        # إنشاء المسجل الآمن
+        self.logger = SecureLogger(setup_logger("orchestrator"))
         
         # إنشاء المجلدات المطلوبة
         self._ensure_directories()
@@ -311,6 +320,7 @@ class MeetingOrchestrator:
             voting_result = self.agent_manager.calculate_voting_result(votes)
             
             # حفظ تاريخ التصويت في نظام الذاكرة
+            session_id = meeting_data.get("session_id", "unknown_session")
             voting_stored = self.memory_system.store_voting_history(
                 session_id, proposal_for_voting, votes, voting_result
             )
@@ -981,6 +991,10 @@ class MeetingOrchestrator:
             json.dump(board_data, f, ensure_ascii=False, indent=2)
         
         self.logger.info(f"✅ تم تحديث لوحة المهام: {board_file} (أضيف {new_tasks_added} مهمة جديدة)")
+        
+        # تحويل المهام الجديدة إلى GitHub Issues
+        if new_tasks_added > 0:
+            self._convert_new_tasks_to_issues(board_data, new_tasks_added)
     
     def _determine_task_assignee(self, task_title: str) -> str:
         """تحديد المسؤول عن المهمة بناءً على محتواها"""
@@ -1220,3 +1234,83 @@ class MeetingOrchestrator:
         except Exception as e:
             self.logger.error(f"فشل في استرجاع المهام: {e}")
             return {}
+    
+    def _convert_new_tasks_to_issues(self, board_data: Dict[str, Any], new_tasks_count: int):
+        """تحويل المهام الجديدة إلى GitHub Issues"""
+        try:
+            self.logger.info(f"🔄 تحويل {new_tasks_count} مهمة جديدة إلى GitHub Issues...")
+            
+            # التأكد من وجود العلامات المطلوبة
+            self.github_issues_manager.ensure_labels_exist()
+            
+            # الحصول على المهام الجديدة (آخر المهام المضافة)
+            new_tasks = board_data["todo"][-new_tasks_count:] if new_tasks_count <= len(board_data["todo"]) else board_data["todo"]
+            
+            successful_conversions = 0
+            
+            for task in new_tasks:
+                # تحويل المهمة إلى Issue
+                result = self.github_issues_manager.convert_task_to_issue(
+                    task_data=task,
+                    session_id=board_data.get("metadata", {}).get("session_id")
+                )
+                
+                if result.success:
+                    successful_conversions += 1
+                    # تحديث المهمة بمعلومات Issue
+                    task["github_issue"] = {
+                        "number": result.issue_number,
+                        "url": result.issue_url,
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                else:
+                    self.logger.warning(f"فشل في تحويل المهمة '{task['title']}' إلى Issue: {result.error}")
+                
+                # تأخير بسيط لتجنب rate limiting
+                import time
+                time.sleep(1)
+            
+            # حفظ التحديثات على board
+            if successful_conversions > 0:
+                board_file = Path(self.config.BOARD_DIR) / "tasks.json"
+                with open(board_file, 'w', encoding='utf-8') as f:
+                    json.dump(board_data, f, ensure_ascii=False, indent=2)
+            
+            self.logger.info(f"✅ تم تحويل {successful_conversions}/{new_tasks_count} مهمة إلى GitHub Issues بنجاح")
+            
+        except Exception as e:
+            self.logger.error(f"فشل في تحويل المهام إلى GitHub Issues: {e}")
+    
+    def sync_task_status_with_github(self, task_id: str, new_status: str) -> bool:
+        """مزامنة حالة المهمة مع GitHub Issue"""
+        try:
+            board_file = Path(self.config.BOARD_DIR) / "tasks.json"
+            
+            if not board_file.exists():
+                return False
+            
+            with open(board_file, 'r', encoding='utf-8') as f:
+                board_data = json.load(f)
+            
+            # البحث عن المهمة
+            task_found = False
+            for status_list in [board_data["todo"], board_data["in_progress"], board_data["done"]]:
+                for task in status_list:
+                    if task.get("id") == task_id and task.get("github_issue"):
+                        issue_number = task["github_issue"]["number"]
+                        
+                        # تحديث حالة Issue في GitHub
+                        if self.github_issues_manager.update_issue_status(issue_number, new_status):
+                            self.logger.info(f"✅ تم مزامنة حالة المهمة {task_id} مع GitHub Issue #{issue_number}")
+                            return True
+                        else:
+                            self.logger.warning(f"فشل في تحديث GitHub Issue #{issue_number}")
+                            return False
+            
+            if not task_found:
+                self.logger.warning(f"لم يتم العثور على المهمة {task_id} أو لا تحتوي على GitHub Issue")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"فشل في مزامنة حالة المهمة مع GitHub: {e}")
+            return False

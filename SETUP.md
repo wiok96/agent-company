@@ -51,6 +51,7 @@ Actions > AACS Manual Meeting > Run workflow
 - **محاضر الاجتماعات**: `meetings/meeting_YYYYMMDD_HHMMSS/`
 - **لوحة المهام**: `board/tasks.json` للمهام الجديدة
 - **لوحة التحكم**: `https://[username].github.io/[repo-name]/`
+   https://wiok96.github.io/agent-company/
 
 #### 📁 **المخرجات الفعلية لكل اجتماع:**
 ```

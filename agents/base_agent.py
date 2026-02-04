@@ -70,7 +70,31 @@ class BaseAgent(ABC):
         return self.profile.voting_weight * self.profile.reputation_score
     
     def generate_self_reflection(self, meeting_summary: Dict[str, Any]) -> str:
-        """توليد تقرير المراجعة الذاتية باستخدام الذكاء الاصطناعي"""
+        """توليد تقرير المراجعة الذاتية باستخدام النظام المحسن"""
+        
+        # محاولة استخدام النظام المحسن إذا كان متوفراً
+        try:
+            from core.self_reflection_system import SelfReflectionSystem
+            from core.memory import MemorySystem
+            from core.config import Config
+            
+            config = Config()
+            memory_system = MemorySystem(config)
+            reflection_system = SelfReflectionSystem(config, memory_system)
+            
+            return reflection_system.generate_enhanced_reflection(
+                self.profile.id, 
+                self.profile, 
+                meeting_summary, 
+                self.conversation_history
+            )
+            
+        except Exception as e:
+            # في حالة فشل النظام المحسن، استخدم النظام الأساسي
+            return self._generate_basic_reflection(meeting_summary)
+    
+    def _generate_basic_reflection(self, meeting_summary: Dict[str, Any]) -> str:
+        """توليد مراجعة ذاتية أساسية (نسخة احتياطية)"""
         
         # حساب المساهمات الصحيح
         my_contributions = len([m for m in self.conversation_history if m.agent_id == self.profile.id])

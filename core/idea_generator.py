@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from .config import Config
 from .logger import setup_logger, SecureLogger
 from .memory import MemorySystem
+from .failure_library import FailureLibrary
 
 
 @dataclass
@@ -34,9 +35,10 @@ class ProjectTemplate:
 class IdeaGenerator:
     """مولد الأفكار مع القوالب المحددة"""
     
-    def __init__(self, config: Config, memory_system: MemorySystem):
+    def __init__(self, config: Config, memory_system: MemorySystem, failure_library: FailureLibrary = None):
         self.config = config
         self.memory_system = memory_system
+        self.failure_library = failure_library
         self.logger = SecureLogger(setup_logger("idea_generator"))
         
         # تحميل قوالب المشاريع
@@ -267,6 +269,19 @@ class IdeaGenerator:
         
         # تخصيص القالب وإضافة تفاصيل إضافية
         customized_idea = self._customize_template(selected_template, context)
+        
+        # فحص الفكرة مقابل الإخفاقات السابقة
+        if self.failure_library:
+            failure_validation = self.failure_library.validate_idea_against_failures(customized_idea)
+            customized_idea['failure_analysis'] = failure_validation
+            
+            # إضافة تحذيرات إذا كانت هناك مخاطر عالية
+            if failure_validation.get('risk_level') == 'high':
+                customized_idea['risk_warnings'] = failure_validation.get('warnings', [])
+                customized_idea['risk_recommendations'] = failure_validation.get('recommendations', [])
+                self.logger.warning(f"⚠️ فكرة عالية المخاطر: {customized_idea['title']}")
+            else:
+                self.logger.info(f"✅ فكرة آمنة: {customized_idea['title']}")
         
         self.logger.info(f"💡 تم توليد فكرة جديدة: {customized_idea['title']}")
         

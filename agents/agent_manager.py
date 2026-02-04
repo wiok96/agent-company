@@ -8,12 +8,13 @@ from .base_agent import BaseAgent, SimpleAgent, AGENT_PROFILES, Message
 from core.config import Config, AGENT_ROLES, VOTING_WEIGHTS
 from core.logger import setup_logger, SecureLogger
 from core.idea_generator import IdeaGenerator
+from core.failure_library import FailureLibrary
 
 
 class AgentManager:
     """مدير الوكلاء الأساسي"""
     
-    def __init__(self, config: Config, memory_system=None):
+    def __init__(self, config: Config, memory_system=None, failure_library: FailureLibrary = None):
         self.config = config
         self.logger = SecureLogger(setup_logger("agent_manager"))
         self.agents: Dict[str, BaseAgent] = {}
@@ -21,7 +22,7 @@ class AgentManager:
         # تهيئة مولد الأفكار إذا كان نظام الذاكرة متوفر
         self.idea_generator = None
         if memory_system:
-            self.idea_generator = IdeaGenerator(config, memory_system)
+            self.idea_generator = IdeaGenerator(config, memory_system, failure_library)
         
         # تهيئة الوكلاء
         self._initialize_agents()

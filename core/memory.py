@@ -586,3 +586,76 @@ class MemorySystem:
         except Exception as e:
             self.logger.error(f"فشل في تنظيف البيانات القديمة: {e}")
             return False
+    
+    def get_agent_reflections(self, agent_id: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """استرجاع تقييمات وكيل محدد"""
+        try:
+            reflections = []
+            reflections_path = self.base_path / "reflections"
+            
+            if not reflections_path.exists():
+                return reflections
+            
+            # البحث في ملفات التقييمات
+            for entry_file in reflections_path.glob("*.json"):
+                try:
+                    with open(entry_file, 'r', encoding='utf-8') as f:
+                        entry_data = json.load(f)
+                        
+                        if entry_data.get("content", {}).get("agent_id") == agent_id:
+                            reflections.append({
+                                "session_id": entry_data.get("content", {}).get("session_id"),
+                                "timestamp": entry_data.get("timestamp"),
+                                "insights": entry_data.get("content", {}).get("extracted_insights", {}),
+                                "reflection_text": entry_data.get("content", {}).get("reflection_text", "")
+                            })
+                
+                except Exception as e:
+                    self.logger.warning(f"فشل في قراءة تقييم من {entry_file}: {e}")
+            
+            # ترتيب حسب التاريخ (الأحدث أولاً)
+            reflections.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+            
+            return reflections[:limit]
+            
+        except Exception as e:
+            self.logger.error(f"فشل في استرجاع تقييمات الوكيل {agent_id}: {e}")
+            return []
+    
+    def get_reflection_trends(self, agent_id: str) -> Dict[str, Any]:
+        """تحليل اتجاهات التحسن في التقييمات"""
+        reflections = self.get_agent_reflections(agent_id, limit=10)
+        
+        if len(reflections) < 2:
+            return {
+                "trend": "insufficient_data",
+                "message": "بيانات غير كافية لتحليل الاتجاه",
+                "total_reflections": len(reflections)
+            }
+        
+        # تحليل التطور عبر الوقت
+        success_trend = []
+        failure_trend = []
+        improvement_trend = []
+        
+        for reflection in reflections:
+            insights = reflection.get("insights", {})
+            success_trend.append(len(insights.get("successes", [])))
+            failure_trend.append(len(insights.get("failures", [])))
+            improvement_trend.append(len(insights.get("improvements", [])))
+        
+        # حساب الاتجاه العام
+        recent_avg = sum(success_trend[:3]) / min(3, len(success_trend)) if success_trend else 0
+        older_avg = sum(success_trend[3:]) / max(1, len(success_trend[3:])) if len(success_trend) > 3 else recent_avg
+        
+        trend_direction = "improving" if recent_avg > older_avg else "declining" if recent_avg < older_avg else "stable"
+        
+        return {
+            "trend": trend_direction,
+            "success_trend": success_trend,
+            "failure_trend": failure_trend,
+            "improvement_trend": improvement_trend,
+            "total_reflections": len(reflections),
+            "recent_performance": recent_avg,
+            "historical_performance": older_avg
+        }

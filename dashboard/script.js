@@ -22,12 +22,49 @@ let allAgents = [];
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 AACS Enhanced Dashboard تم التحميل');
+    
+    // Add GitHub Pages detection
+    if (window.location.hostname.includes('github.io')) {
+        const repoName = window.location.pathname.split('/')[1];
+        console.log('🌐 GitHub Pages detected:', window.location.hostname.split('.')[0] + '/' + repoName);
+    }
+    
+    // Debug CSS loading
+    console.log('📱 Screen size:', window.innerWidth + 'x' + window.innerHeight);
+    console.log('🎨 Body computed styles:', {
+        background: window.getComputedStyle(document.body).background,
+        fontFamily: window.getComputedStyle(document.body).fontFamily,
+        direction: window.getComputedStyle(document.body).direction
+    });
+    
+    // Check if critical elements exist
+    const criticalElements = ['totalMeetings', 'totalDecisions', 'totalTasks'];
+    criticalElements.forEach(id => {
+        const element = document.getElementById(id);
+        console.log(`Element ${id}:`, element ? 'Found' : 'Missing');
+    });
+    
     initializeDashboard();
     setupEventListeners();
     startAutoRefresh();
 });
 
 function initializeDashboard() {
+    // Check if CSS is loaded properly
+    const bodyStyles = window.getComputedStyle(document.body);
+    const background = bodyStyles.background || bodyStyles.backgroundColor;
+    
+    if (!background || background === 'rgba(0, 0, 0, 0)' || background === 'transparent') {
+        console.warn('⚠️ CSS may not be loading properly');
+        showNotification('قد تكون هناك مشكلة في تحميل التصميم', 'warning');
+    }
+    
+    // Show loading state
+    const loadingElements = document.querySelectorAll('.loading');
+    loadingElements.forEach(el => {
+        el.textContent = 'جاري التحميل...';
+    });
+    
     loadAllData();
 }
 
@@ -122,11 +159,25 @@ async function loadAllData() {
             loadAgentsData()
         ]);
         
-        updateOverviewStats();
+        // Ensure DOM elements exist before updating
+        setTimeout(() => {
+            updateOverviewStats();
+        }, 100);
+        
         showNotification('تم تحميل البيانات بنجاح', 'success');
     } catch (error) {
         console.error('خطأ في تحميل البيانات:', error);
         showNotification('خطأ في تحميل البيانات', 'error');
+        
+        // Load demo data as fallback
+        allMeetings = getDemoMeetingsData();
+        allTasks = getDemoTasksData();
+        loadDecisionsData();
+        loadAgentsData();
+        
+        setTimeout(() => {
+            updateOverviewStats();
+        }, 100);
     }
 }
 
@@ -745,13 +796,22 @@ function closeModal() {
 
 // Utility functions
 function updateOverviewStats() {
-    document.getElementById('totalMeetings').textContent = allMeetings.length;
-    document.getElementById('totalDecisions').textContent = allDecisions.length;
+    const totalMeetingsEl = document.getElementById('totalMeetings');
+    const totalDecisionsEl = document.getElementById('totalDecisions');
+    const totalTasksEl = document.getElementById('totalTasks');
     
-    const totalTasks = (allTasks.todo?.length || 0) + 
-                      (allTasks.in_progress?.length || 0) + 
-                      (allTasks.done?.length || 0);
-    document.getElementById('totalTasks').textContent = totalTasks;
+    if (totalMeetingsEl) {
+        totalMeetingsEl.textContent = allMeetings.length;
+    }
+    if (totalDecisionsEl) {
+        totalDecisionsEl.textContent = allDecisions.length;
+    }
+    if (totalTasksEl) {
+        const totalTasks = (allTasks.todo?.length || 0) + 
+                          (allTasks.in_progress?.length || 0) + 
+                          (allTasks.done?.length || 0);
+        totalTasksEl.textContent = totalTasks;
+    }
 }
 
 function getAgentName(agentId) {
@@ -1069,6 +1129,12 @@ function formatTime(timestamp) {
 }
 
 function showNotification(message, type = 'info') {
+    // Ensure DOM is ready
+    if (!document.body) {
+        console.log(`Notification (${type}): ${message}`);
+        return;
+    }
+    
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
@@ -1076,7 +1142,9 @@ function showNotification(message, type = 'info') {
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        notification.remove();
+        if (notification.parentNode) {
+            notification.remove();
+        }
     }, 3000);
 }
 
@@ -1219,10 +1287,45 @@ function refreshData() {
     loadAllData();
 }
 
+// Debug function for testing
+window.debugDashboard = function() {
+    console.log('=== AACS Dashboard Debug Info ===');
+    console.log('Current section:', currentSection);
+    console.log('All meetings:', allMeetings.length);
+    console.log('All tasks:', {
+        todo: allTasks.todo?.length || 0,
+        in_progress: allTasks.in_progress?.length || 0,
+        done: allTasks.done?.length || 0
+    });
+    console.log('All decisions:', allDecisions.length);
+    console.log('All agents:', allAgents.length);
+    
+    // Test critical elements
+    const elements = ['totalMeetings', 'totalDecisions', 'totalTasks'];
+    elements.forEach(id => {
+        const el = document.getElementById(id);
+        console.log(`${id}:`, el ? `Found (${el.textContent})` : 'Missing');
+    });
+    
+    return {
+        meetings: allMeetings.length,
+        tasks: allTasks,
+        decisions: allDecisions.length,
+        agents: allAgents.length
+    };
+};
+
 // Error handling
 window.addEventListener('error', function(event) {
     console.error('خطأ في لوحة التحكم المحسنة:', event.error);
+    console.error('Stack trace:', event.error?.stack);
     showNotification('حدث خطأ في لوحة التحكم', 'error');
+});
+
+// Handle unhandled promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('خطأ في Promise:', event.reason);
+    showNotification('حدث خطأ في تحميل البيانات', 'error');
 });
 
 // Initialize on load

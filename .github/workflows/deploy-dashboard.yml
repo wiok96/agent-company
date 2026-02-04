@@ -1,0 +1,69 @@
+name: Deploy AACS Dashboard
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'dashboard/**'
+      - 'meetings/**'
+      - 'board/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Prepare dashboard files
+      run: |
+        # إنشاء مجلد البناء
+        mkdir -p _site
+        
+        # نسخ ملفات لوحة التحكم
+        cp -r dashboard/* _site/
+        
+        # نسخ بيانات الاجتماعات والمهام إذا كانت موجودة
+        if [ -d "meetings" ]; then
+          cp -r meetings _site/
+        fi
+        
+        if [ -d "board" ]; then
+          cp -r board _site/
+        fi
+        
+        # إنشاء ملف robots.txt
+        echo "User-agent: *" > _site/robots.txt
+        echo "Disallow: /meetings/" >> _site/robots.txt
+        echo "Disallow: /board/" >> _site/robots.txt
+        
+        # إنشاء ملف .nojekyll لتجنب معالجة Jekyll
+        touch _site/.nojekyll
+        
+        echo "✅ تم تحضير ملفات لوحة التحكم"
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: '_site'
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

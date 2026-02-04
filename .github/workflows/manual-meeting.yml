@@ -1,0 +1,177 @@
+name: AACS Manual Meeting
+
+on:
+  workflow_dispatch:
+    inputs:
+      agenda:
+        description: 'أجندة الاجتماع'
+        required: true
+        default: 'اجتماع يدوي'
+        type: string
+      
+      debug:
+        description: 'تفعيل وضع التصحيح'
+        required: false
+        default: false
+        type: boolean
+      
+      priority:
+        description: 'أولوية الاجتماع'
+        required: false
+        default: 'normal'
+        type: choice
+        options:
+          - normal
+          - high
+          - urgent
+      
+      notify_telegram:
+        description: 'إرسال إشعار Telegram عند الانتهاء'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  manual-meeting:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Validate configuration
+      env:
+        AI_PROVIDER: ${{ secrets.AI_PROVIDER }}
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        python -c "from core.config import Config; Config.validate(); print('✅ Configuration valid')"
+    
+    - name: Display meeting info
+      run: |
+        echo "🎯 اجتماع AACS يدوي"
+        echo "📋 الأجندة: ${{ github.event.inputs.agenda }}"
+        echo "🔧 وضع التصحيح: ${{ github.event.inputs.debug }}"
+        echo "⚡ الأولوية: ${{ github.event.inputs.priority }}"
+        echo "📱 إشعار Telegram: ${{ github.event.inputs.notify_telegram }}"
+        echo "👤 المشغل: ${{ github.actor }}"
+        echo "📅 الوقت: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+    
+    - name: Run AACS Manual Meeting
+      env:
+        AI_PROVIDER: ${{ secrets.AI_PROVIDER }}
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        MEETING_AGENDA: ${{ github.event.inputs.agenda }}
+        DEBUG_MODE: ${{ github.event.inputs.debug }}
+        MEETING_PRIORITY: ${{ github.event.inputs.priority }}
+        TRIGGERED_BY: ${{ github.actor }}
+        MANUAL_EXECUTION: 'true'
+      run: |
+        echo "🚀 بدء الاجتماع اليدوي..."
+        python scripts/run_meeting.py
+    
+    - name: Commit meeting artifacts
+      if: always()
+      run: |
+        git config --local user.email "aacs-bot@github.com"
+        git config --local user.name "AACS Bot"
+        
+        # إضافة جميع الملفات الجديدة والمحدثة
+        git add meetings/ board/ -A
+        
+        # التحقق من وجود تغييرات
+        if git diff --staged --quiet; then
+          echo "لا توجد تغييرات للحفظ"
+        else
+          COMMIT_MSG="🎯 AACS Manual Meeting by ${{ github.actor }} - $(date -u '+%Y-%m-%d %H:%M UTC')
+          
+          📋 الأجندة: ${{ github.event.inputs.agenda }}
+          ⚡ الأولوية: ${{ github.event.inputs.priority }}"
+          
+          git commit -m "$COMMIT_MSG"
+          git push
+          echo "✅ تم حفظ مخرجات الاجتماع اليدوي"
+        fi
+    
+    - name: Send success notification
+      if: success() && github.event.inputs.notify_telegram == 'true'
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+          MESSAGE="✅ تم إنهاء اجتماع AACS اليدوي بنجاح
+          
+          👤 المشغل: ${{ github.actor }}
+          ⏰ الوقت: $(date -u '+%Y-%m-%d %H:%M UTC')
+          📋 الأجندة: ${{ github.event.inputs.agenda }}
+          ⚡ الأولوية: ${{ github.event.inputs.priority }}
+          🔗 التفاصيل: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          تم حفظ جميع المخرجات في المستودع."
+          
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d text="$MESSAGE" \
+            -d parse_mode="HTML"
+          
+          echo "📱 تم إرسال إشعار النجاح"
+        else
+          echo "⚠️ لم يتم تكوين إشعارات Telegram"
+        fi
+    
+    - name: Send failure notification
+      if: failure()
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+          MESSAGE="🚨 فشل اجتماع AACS اليدوي
+          
+          👤 المشغل: ${{ github.actor }}
+          ⏰ الوقت: $(date -u '+%Y-%m-%d %H:%M UTC')
+          📋 الأجندة: ${{ github.event.inputs.agenda }}
+          ⚡ الأولوية: ${{ github.event.inputs.priority }}
+          🔗 السجلات: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          يرجى مراجعة السجلات لمعرفة سبب الفشل."
+          
+          curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            -d chat_id="$TELEGRAM_CHAT_ID" \
+            -d text="$MESSAGE" \
+            -d parse_mode="HTML"
+          
+          echo "📱 تم إرسال إشعار الفشل"
+        else
+          echo "⚠️ لم يتم تكوين إشعارات Telegram"
+        fi
+    
+    - name: Upload artifacts on completion
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: aacs-manual-meeting-${{ github.run_id }}
+        path: |
+          meetings/
+          board/
+          logs/
+        retention-days: 30

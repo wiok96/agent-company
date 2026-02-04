@@ -1,5 +1,23 @@
 {
   "meetings": [
-    
+    {
+      "session_id": "meeting_20260204_095556",
+      "timestamp": "2026-02-04T09:55:56.481441+00:00",
+      "agenda": "اجتماع دوري",
+      "participants": [
+        "ceo",
+        "pm",
+        "cto",
+        "developer",
+        "qa",
+        "marketing",
+        "finance",
+        "critic",
+        "chair",
+        "memory"
+      ],
+      "decisions_count": 1,
+      "status": "completed"
+    }
   ]
 }

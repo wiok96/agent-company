@@ -559,6 +559,86 @@
       "created_at": "2026-02-04T04:07:22.949932+00:00",
       "priority": "medium",
       "status": "todo"
+    },
+    {
+      "id": "task_057",
+      "title": "إنشاء مستودع GitHub لمشروع منصة التجارة الإلكترونية الذكية",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269087+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_058",
+      "title": "تصميم قاعدة بيانات للمنتجات والعملاء",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269099+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_059",
+      "title": "تطوير نظام إدارة المخزون الذكي",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269102+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_060",
+      "title": "بناء واجهة متجر إلكتروني متجاوبة",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269105+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_061",
+      "title": "تطوير نظام دفع آمن ومتعدد الطرق",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269107+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_062",
+      "title": "إنشاء نظام توصيات ذكي للمنتجات",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269109+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_063",
+      "title": "تطوير لوحة تحكم للتجار",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269112+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_064",
+      "title": "اختبار الأمان والأداء",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_040913_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:09:14.269116+00:00",
+      "priority": "medium",
+      "status": "todo"
     }
   ],
   "in_progress": [],

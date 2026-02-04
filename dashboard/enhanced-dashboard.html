@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم AACS المحسنة</title>
+    <link rel="stylesheet" href="enhanced-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">🤖 AACS</h1>
+                <p class="version">النسخة المحسنة</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="overview">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">نظرة عامة</span>
+                </li>
+                <li class="nav-item" data-section="meetings">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">الاجتماعات</span>
+                </li>
+                <li class="nav-item" data-section="agents">
+                    <span class="nav-icon">🤖</span>
+                    <span class="nav-text">الوكلاء</span>
+                </li>
+                <li class="nav-item" data-section="tasks">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">المهام</span>
+                </li>
+                <li class="nav-item" data-section="decisions">
+                    <span class="nav-icon">🗳️</span>
+                    <span class="nav-text">القرارات</span>
+                </li>
+                <li class="nav-item" data-section="analytics">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">التحليلات</span>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <button class="run-meeting-btn" onclick="runManualMeeting()">
+                    <span>▶️</span>
+                    تشغيل اجتماع
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="content-header">
+                <div class="header-info">
+                    <h2 class="section-title" id="sectionTitle">نظرة عامة</h2>
+                    <p class="section-subtitle" id="sectionSubtitle">حالة النظام والإحصائيات العامة</p>
+                </div>
+                <div class="header-actions">
+                    <button class="action-btn" onclick="refreshData()">
+                        <span>🔄</span>
+                        تحديث
+                    </button>
+                    <div class="status-indicator" id="systemStatus">
+                        <span class="status-dot"></span>
+                        <span class="status-text">نشط</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Sections -->
+            <div class="content-body">
+                <!-- Overview Section -->
+                <section id="overview-section" class="content-section active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalMeetings">0</div>
+                                <div class="stat-label">إجمالي الاجتماعات</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🗳️</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalDecisions">0</div>
+                                <div class="stat-label">إجمالي القرارات</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📋</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalTasks">0</div>
+                                <div class="stat-label">إجمالي المهام</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🤖</div>
+                            <div class="stat-info">
+                                <div class="stat-value">10</div>
+                                <div class="stat-label">الوكلاء النشطون</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overview-grid">
+                        <div class="overview-card">
+                            <h3>آخر اجتماع</h3>
+                            <div id="lastMeetingOverview" class="overview-content">
+                                جاري التحميل...
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <h3>المهام النشطة</h3>
+                            <div id="activeTasks" class="overview-content">
+                                جاري التحميل...
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Meetings Section -->
+                <section id="meetings-section" class="content-section">
+                    <div class="section-controls">
+                        <div class="search-box">
+                            <input type="text" id="meetingSearch" placeholder="البحث في الاجتماعات...">
+                            <span class="search-icon">🔍</span>
+                        </div>
+                        <select id="meetingFilter">
+                            <option value="all">جميع الاجتماعات</option>
+                            <option value="recent">الأخيرة</option>
+                            <option value="completed">المكتملة</option>
+                        </select>
+                    </div>
+                    
+                    <div class="meetings-list" id="meetingsContainer">
+                        <!-- سيتم ملؤها بـ JavaScript -->
+                    </div>
+                </section>
+
+                <!-- Agents Section -->
+                <section id="agents-section" class="content-section">
+                    <div class="agents-grid" id="agentsContainer">
+                        <!-- سيتم ملؤها بـ JavaScript -->
+                    </div>
+                </section>
+
+                <!-- Tasks Section -->
+                <section id="tasks-section" class="content-section">
+                    <div class="tasks-board">
+                        <div class="board-column">
+                            <h3 class="column-header">📝 قيد الانتظار</h3>
+                            <div class="tasks-list" id="todoTasksList"></div>
+                        </div>
+                        <div class="board-column">
+                            <h3 class="column-header">⚡ قيد التنفيذ</h3>
+                            <div class="tasks-list" id="inProgressTasksList"></div>
+                        </div>
+                        <div class="board-column">
+                            <h3 class="column-header">✅ مكتملة</h3>
+                            <div class="tasks-list" id="doneTasksList"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Decisions Section -->
+                <section id="decisions-section" class="content-section">
+                    <div class="decisions-list" id="decisionsContainer">
+                        <!-- سيتم ملؤها بـ JavaScript -->
+                    </div>
+                </section>
+
+                <!-- Analytics Section -->
+                <section id="analytics-section" class="content-section">
+                    <div class="analytics-grid">
+                        <div class="chart-card">
+                            <h3>نشاط الوكلاء</h3>
+                            <div class="chart-container" id="agentActivityChart">
+                                <!-- رسم بياني بسيط -->
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>تقدم المهام</h3>
+                            <div class="chart-container" id="taskProgressChart">
+                                <!-- رسم بياني بسيط -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Meeting Details Modal -->
+    <div class="modal" id="meetingModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="modalTitle">تفاصيل الاجتماع</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- سيتم ملؤها ديناميكياً -->
+            </div>
+        </div>
+    </div>
+
+    <script src="enhanced-dashboard.js"></script>
+</body>
+</html>

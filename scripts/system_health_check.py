@@ -134,7 +134,7 @@ class SystemHealthChecker:
         
         # فحص الأسرار المطلوبة
         required_secrets = {
-            "GROQ_API_KEY": {"present": bool(os.getenv("GROQ_API_KEY")), "required": True}
+            "AI_API_KEY": {"present": bool(os.getenv("AI_API_KEY")), "required": True}
         }
         
         optional_secrets = {

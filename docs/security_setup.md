@@ -12,7 +12,7 @@
 
 ### الأسرار المطلوبة
 
-#### 1. GROQ_API_KEY (مطلوب)
+#### 1. AI_API_KEY (مطلوب)
 - **الوصف**: مفتاح API لخدمة Groq للذكاء الاصطناعي
 - **التنسيق**: `gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 - **كيفية الحصول عليه**:
@@ -59,7 +59,7 @@
 ### أسماء الأسرار في GitHub
 
 ```
-GROQ_API_KEY=gsk_your_groq_api_key_here
+AI_API_KEY=gsk_your_groq_api_key_here
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_CHAT_ID=your_telegram_chat_id_here
 GITHUB_TOKEN=ghp_your_github_token_here

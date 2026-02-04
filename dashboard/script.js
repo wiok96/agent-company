@@ -1,4 +1,4 @@
-// AACS V0 Dashboard JavaScript - Enhanced Version
+// AACS Enhanced Dashboard JavaScript
 
 // Configuration
 const CONFIG = {
@@ -8,346 +8,766 @@ const CONFIG = {
     GITHUB_USER: window.location.hostname.includes('github.io')
         ? window.location.hostname.split('.')[0]
         : 'user',
-    REFRESH_INTERVAL: 30000, // 30 seconds
-    MAX_MEETINGS_DISPLAY: 10
+    REFRESH_INTERVAL: 30000,
+    MAX_MEETINGS_DISPLAY: 20
 };
 
 // Global state
-let lastRefresh = null;
-let refreshTimer = null;
-let allTasks = { todo: [], in_progress: [], done: [] };
+let currentSection = 'overview';
 let allMeetings = [];
-let groupedTasks = {};
+let allTasks = { todo: [], in_progress: [], done: [] };
+let allDecisions = [];
+let allAgents = [];
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 AACS Dashboard V0 تم التحميل');
+    console.log('🚀 AACS Enhanced Dashboard تم التحميل');
     initializeDashboard();
+    setupEventListeners();
     startAutoRefresh();
 });
 
 function initializeDashboard() {
-    updateLastRefreshTime();
-    loadSystemStatus();
-    loadRecentMeetings();
-    loadTaskBoard();
-    loadAgentsStatus();
-    
-    // Set up event listeners
-    setupEventListeners();
+    loadAllData();
 }
 
 function setupEventListeners() {
-    // Close modal when clicking outside
-    window.onclick = function(event) {
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const section = this.dataset.section;
+            switchSection(section);
+        });
+    });
+
+    // Modal close
+    window.addEventListener('click', function(event) {
         const modal = document.getElementById('meetingModal');
         if (event.target === modal) {
-            closeMeetingModal();
-        }
-    };
-    
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeMeetingModal();
-        }
-        if (event.ctrlKey && event.key === 'r') {
-            event.preventDefault();
-            refreshData();
+            closeModal();
         }
     });
-    
-    // Task filter buttons
-    document.addEventListener('click', function(event) {
-        if (event.target.classList.contains('filter-btn')) {
-            const filter = event.target.dataset.filter;
-            filterTasks(filter);
-            
-            // Update active button
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-        
-        // Meeting details
-        if (event.target.classList.contains('meeting-details-btn')) {
-            const meetingId = event.target.dataset.meetingId;
-            showMeetingDetails(meetingId);
-        }
-    });
-    
-    // Task status change via select dropdown
-    document.addEventListener('change', function(event) {
-        if (event.target.classList.contains('task-status-select')) {
-            const taskId = event.target.dataset.taskId;
-            const newStatus = event.target.value;
-            changeTaskStatus(taskId, newStatus);
-        }
-    });
-    
-    // Check if running from file:// protocol and show warning
-    if (window.location.protocol === 'file:') {
-        setTimeout(() => {
-            showNotification('⚠️ يرجى استخدام الخادم المحلي للحصول على أفضل تجربة. شغل start-dashboard.bat', 'error');
-        }, 2000);
+
+    // Search functionality
+    const searchInput = document.getElementById('meetingSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filterMeetings(this.value);
+        });
+    }
+
+    // Filter functionality
+    const filterSelect = document.getElementById('meetingFilter');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', function() {
+            filterMeetingsByType(this.value);
+        });
     }
 }
 
 function startAutoRefresh() {
-    refreshTimer = setInterval(() => {
-        refreshData();
+    setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            refreshData();
+        }
     }, CONFIG.REFRESH_INTERVAL);
 }
 
-function stopAutoRefresh() {
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-    }
-}
+// Navigation functions
+function switchSection(section) {
+    // Update navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector(`[data-section="${section}"]`).classList.add('active');
 
-// Manual meeting functions
-function runManualMeeting() {
-    document.getElementById('meetingModal').style.display = 'block';
-}
+    // Update content sections
+    document.querySelectorAll('.content-section').forEach(sec => {
+        sec.classList.remove('active');
+    });
+    document.getElementById(`${section}-section`).classList.add('active');
 
-function closeMeetingModal() {
-    document.getElementById('meetingModal').style.display = 'none';
-}
-
-function confirmRunMeeting() {
-    const agenda = document.getElementById('meetingAgenda').value || 'اجتماع يدوي من لوحة التحكم';
-    const debug = document.getElementById('debugMode').checked;
+    // Update header
+    updateSectionHeader(section);
     
-    // Show loading state
-    showNotification('جاري تشغيل الاجتماع...', 'info');
+    currentSection = section;
     
-    // Close modal
-    closeMeetingModal();
-    
-    // Simulate meeting execution locally
-    // In a real implementation, this would call a local API or Python script
-    simulateLocalMeeting(agenda, debug);
+    // Load section-specific data
+    loadSectionData(section);
 }
 
-function simulateLocalMeeting(agenda, debug) {
-    // Create a simulated meeting
-    const meetingId = `meeting_${new Date().toISOString().replace(/[:.]/g, '').slice(0, 15)}`;
-    const newMeeting = {
-        session_id: meetingId,
-        agenda: agenda,
-        timestamp: new Date().toISOString(),
-        decisions_count: Math.floor(Math.random() * 3) + 1,
-        status: 'in_progress',
-        participants: ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory']
+function updateSectionHeader(section) {
+    const titles = {
+        'overview': { title: 'نظرة عامة', subtitle: 'حالة النظام والإحصائيات العامة' },
+        'meetings': { title: 'الاجتماعات', subtitle: 'سجل الاجتماعات والمحاضر' },
+        'agents': { title: 'الوكلاء', subtitle: 'حالة ونشاط الوكلاء الذكيين' },
+        'tasks': { title: 'المهام', subtitle: 'إدارة وتتبع المهام' },
+        'decisions': { title: 'القرارات', subtitle: 'سجل القرارات والتصويت' },
+        'analytics': { title: 'التحليلات', subtitle: 'إحصائيات وتحليلات الأداء' }
     };
     
-    // Add to meetings list
-    allMeetings.push(newMeeting);
-    
-    // Simulate meeting progress
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        progress += 10;
-        
-        if (progress <= 100) {
-            showNotification(`تقدم الاجتماع: ${progress}%`, 'info');
-        }
-        
-        if (progress >= 100) {
-            clearInterval(progressInterval);
-            
-            // Mark meeting as completed
-            newMeeting.status = 'completed';
-            
-            // Generate some mock tasks
-            generateMockTasks(newMeeting);
-            
-            showNotification('تم إكمال الاجتماع بنجاح! تم إنشاء مهام جديدة.', 'success');
-            
-            // Refresh data
-            setTimeout(() => {
-                refreshData();
-            }, 1000);
-        }
-    }, 2000);
+    const info = titles[section] || titles['overview'];
+    document.getElementById('sectionTitle').textContent = info.title;
+    document.getElementById('sectionSubtitle').textContent = info.subtitle;
 }
-
-function generateMockTasks(meeting) {
-    // Generate 2-3 mock tasks from the meeting
-    const taskTemplates = [
-        'تطوير نموذج أولي لـ',
-        'إجراء بحث السوق لـ',
-        'إنشاء خطة تسويقية لـ',
-        'تحليل المتطلبات التقنية لـ',
-        'إعداد دراسة جدوى لـ'
-    ];
+// Data loading functions
+async function loadAllData() {
+    showNotification('جاري تحميل البيانات...', 'info');
     
-    const numTasks = Math.floor(Math.random() * 3) + 2;
-    
-    for (let i = 0; i < numTasks; i++) {
-        const template = taskTemplates[Math.floor(Math.random() * taskTemplates.length)];
-        const taskId = `task_${Date.now()}_${i}`;
+    try {
+        await Promise.all([
+            loadMeetingsData(),
+            loadTasksData(),
+            loadDecisionsData(),
+            loadAgentsData()
+        ]);
         
-        const newTask = {
-            id: taskId,
-            title: `${template} ${meeting.agenda}`,
-            description: `مهمة من قرار: ${meeting.agenda}`,
-            decision_id: meeting.session_id,
-            assigned_to: ['developer', 'pm', 'cto'][Math.floor(Math.random() * 3)],
-            created_at: new Date().toISOString(),
-            priority: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
-            status: 'todo'
-        };
-        
-        allTasks.todo.push(newTask);
+        updateOverviewStats();
+        showNotification('تم تحميل البيانات بنجاح', 'success');
+    } catch (error) {
+        console.error('خطأ في تحميل البيانات:', error);
+        showNotification('خطأ في تحميل البيانات', 'error');
     }
-    
-    // Save to localStorage
-    localStorage.setItem('aacs_tasks', JSON.stringify(allTasks));
-    localStorage.setItem('aacs_meetings', JSON.stringify(allMeetings));
 }
 
-// Task management functions
-function changeTaskStatus(taskId, newStatus) {
-    // Find the task
-    let task = null;
-    let oldStatus = null;
-    
-    for (const status in allTasks) {
-        const taskIndex = allTasks[status].findIndex(t => t.id === taskId);
-        if (taskIndex !== -1) {
-            task = allTasks[status][taskIndex];
-            oldStatus = status;
-            allTasks[status].splice(taskIndex, 1);
+async function loadSectionData(section) {
+    switch (section) {
+        case 'overview':
+            displayOverview();
             break;
+        case 'meetings':
+            displayMeetings();
+            break;
+        case 'agents':
+            displayAgents();
+            break;
+        case 'tasks':
+            displayTasks();
+            break;
+        case 'decisions':
+            displayDecisions();
+            break;
+        case 'analytics':
+            displayAnalytics();
+            break;
+    }
+}
+
+async function loadMeetingsData() {
+    try {
+        // Try to load from localStorage first
+        const localMeetings = localStorage.getItem('aacs_meetings');
+        if (localMeetings) {
+            allMeetings = JSON.parse(localMeetings);
+        }
+        
+        // Try to load from server
+        const response = await fetch('./meetings/index.json');
+        if (response.ok) {
+            const data = await response.json();
+            const serverMeetings = data.meetings || [];
+            
+            // Merge and deduplicate
+            const combined = [...serverMeetings, ...allMeetings];
+            allMeetings = combined.filter((meeting, index, self) => 
+                index === self.findIndex(m => m.session_id === meeting.session_id)
+            );
+            
+            // Load detailed meeting data
+            await loadMeetingDetails();
+        }
+        
+        if (allMeetings.length === 0) {
+            allMeetings = getDemoMeetingsData();
+        }
+        
+    } catch (error) {
+        console.warn('لم يتم العثور على بيانات الاجتماعات:', error);
+        allMeetings = getDemoMeetingsData();
+    }
+}
+
+async function loadMeetingDetails() {
+    for (let meeting of allMeetings) {
+        try {
+            // Load transcript
+            const transcriptResponse = await fetch(`./meetings/${meeting.session_id}/transcript.jsonl`);
+            if (transcriptResponse.ok) {
+                const transcriptText = await transcriptResponse.text();
+                meeting.transcript = parseTranscript(transcriptText);
+            }
+            
+            // Load decisions
+            const decisionsResponse = await fetch(`./meetings/${meeting.session_id}/decisions.json`);
+            if (decisionsResponse.ok) {
+                const decisionsData = await decisionsResponse.json();
+                meeting.decisions = decisionsData.decisions || [];
+            }
+            
+            // Load minutes
+            const minutesResponse = await fetch(`./meetings/${meeting.session_id}/minutes.md`);
+            if (minutesResponse.ok) {
+                const minutesText = await minutesResponse.text();
+                meeting.minutes = minutesText;
+            }
+            
+        } catch (error) {
+            console.warn(`لم يتم تحميل تفاصيل الاجتماع ${meeting.session_id}:`, error);
+        }
+    }
+}
+
+function parseTranscript(transcriptText) {
+    const lines = transcriptText.split('\n').filter(line => line.trim());
+    const messages = [];
+    
+    for (const line of lines) {
+        try {
+            const message = JSON.parse(line);
+            messages.push(message);
+        } catch (error) {
+            console.warn('خطأ في تحليل سطر المحضر:', line);
         }
     }
     
-    if (task) {
-        // Update task status
-        task.status = newStatus;
-        task.updated_at = new Date().toISOString();
+    return messages;
+}
+
+async function loadTasksData() {
+    try {
+        const localTasks = localStorage.getItem('aacs_tasks');
+        if (localTasks) {
+            allTasks = JSON.parse(localTasks);
+        }
         
-        // Add to new status column
-        allTasks[newStatus].push(task);
+        const response = await fetch('./board/tasks.json');
+        if (response.ok) {
+            const serverTasks = await response.json();
+            // Merge with local tasks
+            allTasks = {
+                todo: [...(serverTasks.todo || []), ...(allTasks.todo || [])],
+                in_progress: [...(serverTasks.in_progress || []), ...(allTasks.in_progress || [])],
+                done: [...(serverTasks.done || []), ...(allTasks.done || [])]
+            };
+        }
         
-        // Update display
-        displayTasks(allTasks);
+        if (!allTasks.todo && !allTasks.in_progress && !allTasks.done) {
+            allTasks = getDemoTasksData();
+        }
         
-        // Show notification
-        const statusNames = {
-            'todo': 'قيد الانتظار',
-            'in_progress': 'قيد التنفيذ', 
-            'done': 'مكتملة'
-        };
-        
-        showNotification(`تم نقل المهمة إلى: ${statusNames[newStatus]}`, 'success');
-        
-        // Save to localStorage (in real implementation, this would save to backend)
-        localStorage.setItem('aacs_tasks', JSON.stringify(allTasks));
+    } catch (error) {
+        console.warn('لم يتم العثور على بيانات المهام:', error);
+        allTasks = getDemoTasksData();
     }
 }
 
-function filterTasks(filter) {
-    if (filter === 'all') {
-        displayTasks(allTasks);
-    } else if (filter === 'project') {
-        displayTasksByProject();
-    } else {
-        // Filter by specific status
-        const filteredTasks = {
-            todo: filter === 'todo' ? allTasks.todo : [],
-            in_progress: filter === 'in_progress' ? allTasks.in_progress : [],
-            done: filter === 'done' ? allTasks.done : []
-        };
-        displayTasks(filteredTasks);
+async function loadDecisionsData() {
+    allDecisions = [];
+    
+    // Extract decisions from meetings
+    for (const meeting of allMeetings) {
+        if (meeting.decisions) {
+            meeting.decisions.forEach(decision => {
+                allDecisions.push({
+                    ...decision,
+                    meeting_id: meeting.session_id,
+                    meeting_date: meeting.timestamp,
+                    meeting_agenda: meeting.agenda
+                });
+            });
+        }
     }
 }
 
-function displayTasksByProject() {
-    // Group tasks by project/decision
-    const grouped = {};
-    
-    for (const status in allTasks) {
-        allTasks[status].forEach(task => {
-            const projectName = extractProjectName(task.description);
-            if (!grouped[projectName]) {
-                grouped[projectName] = { todo: [], in_progress: [], done: [] };
-            }
-            grouped[projectName][status].push(task);
-        });
+function loadAgentsData() {
+    allAgents = [
+        { 
+            id: 'ceo', 
+            name: 'الرئيس التنفيذي', 
+            icon: '👔', 
+            role: 'القيادة الاستراتيجية',
+            status: 'نشط',
+            contributions: getAgentContributions('ceo'),
+            decisions_made: getAgentDecisions('ceo')
+        },
+        { 
+            id: 'pm', 
+            name: 'مدير المشاريع', 
+            icon: '📊', 
+            role: 'إدارة المشاريع',
+            status: 'نشط',
+            contributions: getAgentContributions('pm'),
+            decisions_made: getAgentDecisions('pm')
+        },
+        { 
+            id: 'cto', 
+            name: 'المدير التقني', 
+            icon: '💻', 
+            role: 'القيادة التقنية',
+            status: 'نشط',
+            contributions: getAgentContributions('cto'),
+            decisions_made: getAgentDecisions('cto')
+        },
+        { 
+            id: 'developer', 
+            name: 'المطور', 
+            icon: '⚡', 
+            role: 'التطوير والبرمجة',
+            status: 'نشط',
+            contributions: getAgentContributions('developer'),
+            decisions_made: getAgentDecisions('developer')
+        },
+        { 
+            id: 'qa', 
+            name: 'ضمان الجودة', 
+            icon: '🔍', 
+            role: 'اختبار الجودة',
+            status: 'نشط',
+            contributions: getAgentContributions('qa'),
+            decisions_made: getAgentDecisions('qa')
+        },
+        { 
+            id: 'marketing', 
+            name: 'التسويق', 
+            icon: '📈', 
+            role: 'التسويق والمبيعات',
+            status: 'نشط',
+            contributions: getAgentContributions('marketing'),
+            decisions_made: getAgentDecisions('marketing')
+        },
+        { 
+            id: 'finance', 
+            name: 'المالية', 
+            icon: '💰', 
+            role: 'التحليل المالي',
+            status: 'نشط',
+            contributions: getAgentContributions('finance'),
+            decisions_made: getAgentDecisions('finance')
+        },
+        { 
+            id: 'critic', 
+            name: 'الناقد', 
+            icon: '🤔', 
+            role: 'التقييم النقدي',
+            status: 'نشط',
+            contributions: getAgentContributions('critic'),
+            decisions_made: getAgentDecisions('critic')
+        },
+        { 
+            id: 'chair', 
+            name: 'رئيس الاجتماع', 
+            icon: '🎯', 
+            role: 'إدارة الاجتماعات',
+            status: 'نشط',
+            contributions: getAgentContributions('chair'),
+            decisions_made: getAgentDecisions('chair')
+        },
+        { 
+            id: 'memory', 
+            name: 'إدارة الذاكرة', 
+            icon: '🧠', 
+            role: 'إدارة المعلومات',
+            status: 'نشط',
+            contributions: getAgentContributions('memory'),
+            decisions_made: 0 // Memory agent doesn't vote
+        }
+    ];
+}
+
+function getAgentContributions(agentId) {
+    let count = 0;
+    allMeetings.forEach(meeting => {
+        if (meeting.transcript) {
+            count += meeting.transcript.filter(msg => msg.agent === agentId).length;
+        }
+    });
+    return count;
+}
+
+function getAgentDecisions(agentId) {
+    let count = 0;
+    allDecisions.forEach(decision => {
+        if (decision.votes && decision.votes[agentId]) {
+            count++;
+        }
+    });
+    return count;
+}
+// Display functions
+function displayOverview() {
+    // Update last meeting overview
+    if (allMeetings.length > 0) {
+        const lastMeeting = allMeetings[allMeetings.length - 1];
+        document.getElementById('lastMeetingOverview').innerHTML = `
+            <div class="meeting-summary">
+                <h4>${extractMeetingTitle(lastMeeting)}</h4>
+                <p><strong>التاريخ:</strong> ${formatDate(new Date(lastMeeting.timestamp))}</p>
+                <p><strong>القرارات:</strong> ${lastMeeting.decisions_count || 0}</p>
+                <p><strong>المشاركون:</strong> ${lastMeeting.participants ? lastMeeting.participants.length : 10} وكيل</p>
+                <button class="action-btn" onclick="showMeetingDetails('${lastMeeting.session_id}')">
+                    عرض التفاصيل
+                </button>
+            </div>
+        `;
     }
     
-    groupedTasks = grouped;
-    displayGroupedTasks(grouped);
+    // Update active tasks
+    const activeTasks = [...(allTasks.todo || []), ...(allTasks.in_progress || [])];
+    document.getElementById('activeTasks').innerHTML = `
+        <div class="tasks-summary">
+            <div class="task-count">
+                <span class="count">${allTasks.todo ? allTasks.todo.length : 0}</span>
+                <span class="label">في الانتظار</span>
+            </div>
+            <div class="task-count">
+                <span class="count">${allTasks.in_progress ? allTasks.in_progress.length : 0}</span>
+                <span class="label">قيد التنفيذ</span>
+            </div>
+            <div class="task-count">
+                <span class="count">${allTasks.done ? allTasks.done.length : 0}</span>
+                <span class="label">مكتملة</span>
+            </div>
+        </div>
+    `;
 }
 
-function extractProjectName(description) {
-    // Extract project name from task description
-    const match = description.match(/قرار: (.+)/);
-    return match ? match[1] : 'مشروع غير محدد';
-}
-
-function displayGroupedTasks(grouped) {
-    const container = document.querySelector('.board-columns');
+function displayMeetings() {
+    const container = document.getElementById('meetingsContainer');
     
-    container.innerHTML = Object.keys(grouped).map(projectName => `
-        <div class="project-group">
-            <h3 class="project-title">📁 ${projectName}</h3>
-            <div class="project-tasks">
-                <div class="task-column">
-                    <h4 class="column-title">📝 قيد الانتظار (${grouped[projectName].todo.length})</h4>
-                    <div class="tasks-list">
-                        ${grouped[projectName].todo.map(task => createTaskHTML(task)).join('')}
+    if (allMeetings.length === 0) {
+        container.innerHTML = '<div class="loading">لا توجد اجتماعات حتى الآن</div>';
+        return;
+    }
+    
+    const sortedMeetings = [...allMeetings].sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    
+    container.innerHTML = sortedMeetings.map(meeting => `
+        <div class="meeting-card enhanced-card" onclick="showMeetingDetails('${meeting.session_id}')">
+            <div class="meeting-header">
+                <div class="meeting-title-section">
+                    <div class="meeting-main-title">${extractMeetingTitle(meeting)}</div>
+                    <div class="meeting-subtitle">
+                        <span class="session-id">جلسة: ${formatSessionId(meeting.session_id)}</span>
+                        <span class="meeting-date">${formatDate(new Date(meeting.timestamp))}</span>
                     </div>
                 </div>
-                <div class="task-column">
-                    <h4 class="column-title">⚡ قيد التنفيذ (${grouped[projectName].in_progress.length})</h4>
-                    <div class="tasks-list">
-                        ${grouped[projectName].in_progress.map(task => createTaskHTML(task)).join('')}
+                <div class="meeting-status-section">
+                    <div class="meeting-status ${meeting.status === 'completed' ? 'completed' : 'in-progress'}">
+                        ${meeting.status === 'completed' ? '✅ مكتمل' : '⏳ قيد التنفيذ'}
+                    </div>
+                    <div class="meeting-actions">
+                        <button class="quick-action-btn" onclick="event.stopPropagation(); viewMeetingTranscript('${meeting.session_id}')" title="عرض المحضر">
+                            📄
+                        </button>
+                        <button class="quick-action-btn" onclick="event.stopPropagation(); viewMeetingDecisions('${meeting.session_id}')" title="عرض القرارات">
+                            🗳️
+                        </button>
+                        <button class="quick-action-btn" onclick="event.stopPropagation(); exportMeetingReport('${meeting.session_id}')" title="تصدير تقرير">
+                            📊
+                        </button>
                     </div>
                 </div>
-                <div class="task-column">
-                    <h4 class="column-title">✅ مكتملة (${grouped[projectName].done.length})</h4>
-                    <div class="tasks-list">
-                        ${grouped[projectName].done.map(task => createTaskHTML(task)).join('')}
-                    </div>
+            </div>
+            <div class="meeting-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">🗳️</span>
+                    <span class="stat-value">${meeting.decisions_count || 0}</span>
+                    <span class="stat-label">قرارات</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">👥</span>
+                    <span class="stat-value">${meeting.participants ? meeting.participants.length : 10}</span>
+                    <span class="stat-label">مشارك</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">💬</span>
+                    <span class="stat-value">${meeting.transcript ? meeting.transcript.length : 0}</span>
+                    <span class="stat-label">رسالة</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⏱️</span>
+                    <span class="stat-value">${calculateMeetingDuration(meeting)}</span>
+                    <span class="stat-label">دقيقة</span>
+                </div>
+            </div>
+            <div class="meeting-preview-enhanced">
+                <div class="preview-content">
+                    ${getMeetingPreviewEnhanced(meeting)}
+                </div>
+                <div class="preview-actions">
+                    <span class="view-details-btn">انقر لعرض التفاصيل الكاملة ←</span>
                 </div>
             </div>
         </div>
     `).join('');
 }
 
-function createTaskHTML(task) {
-    const statusOptions = [
-        { value: 'todo', label: 'قيد الانتظار', icon: '📝' },
-        { value: 'in_progress', label: 'قيد التنفيذ', icon: '⚡' },
-        { value: 'done', label: 'مكتملة', icon: '✅' }
-    ];
+function displayAgents() {
+    const container = document.getElementById('agentsContainer');
     
-    return `
-        <div class="task-item enhanced" data-task-id="${task.id}">
-            <div class="task-header">
-                <div class="task-title">${task.title}</div>
-                <div class="task-actions">
-                    <select class="task-status-select" data-task-id="${task.id}">
-                        ${statusOptions.map(option => `
-                            <option value="${option.value}" ${task.status === option.value ? 'selected' : ''}>
-                                ${option.icon} ${option.label}
-                            </option>
-                        `).join('')}
-                    </select>
+    container.innerHTML = allAgents.map(agent => `
+        <div class="agent-card" onclick="showAgentDetails('${agent.id}')">
+            <div class="agent-header">
+                <div class="agent-avatar">${agent.icon}</div>
+                <div class="agent-info">
+                    <h3>${agent.name}</h3>
+                    <div class="agent-role">${agent.role}</div>
                 </div>
             </div>
+            <div class="agent-stats">
+                <div class="agent-stat">
+                    <div class="agent-stat-value">${agent.contributions}</div>
+                    <div class="agent-stat-label">مساهمات</div>
+                </div>
+                <div class="agent-stat">
+                    <div class="agent-stat-value">${agent.decisions_made}</div>
+                    <div class="agent-stat-label">قرارات</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayTasks() {
+    displayTaskColumn('todoTasksList', allTasks.todo || [], 'لا توجد مهام في الانتظار');
+    displayTaskColumn('inProgressTasksList', allTasks.in_progress || [], 'لا توجد مهام قيد التنفيذ');
+    displayTaskColumn('doneTasksList', allTasks.done || [], 'لا توجد مهام مكتملة');
+}
+
+function displayTaskColumn(elementId, tasks, emptyMessage) {
+    const element = document.getElementById(elementId);
+    
+    if (!element) return;
+    
+    if (tasks.length === 0) {
+        element.innerHTML = `<div class="loading">${emptyMessage}</div>`;
+        return;
+    }
+    
+    element.innerHTML = tasks.map(task => `
+        <div class="task-card" onclick="showTaskDetails('${task.id}')">
+            <div class="task-title">${task.title}</div>
             <div class="task-meta">
                 <span>👤 ${task.assigned_to || 'غير محدد'}</span>
-                <span>⏰ ${formatDate(new Date(task.created_at))}</span>
-                <span class="task-priority priority-${task.priority || 'medium'}">
+                <span class="task-priority ${task.priority || 'medium'}">
                     ${getPriorityIcon(task.priority)} ${getPriorityLabel(task.priority)}
                 </span>
             </div>
         </div>
+    `).join('');
+}
+
+function displayDecisions() {
+    const container = document.getElementById('decisionsContainer');
+    
+    if (allDecisions.length === 0) {
+        container.innerHTML = '<div class="loading">لا توجد قرارات حتى الآن</div>';
+        return;
+    }
+    
+    const sortedDecisions = [...allDecisions].sort((a, b) => 
+        new Date(b.meeting_date) - new Date(a.meeting_date)
+    );
+    
+    container.innerHTML = sortedDecisions.map(decision => `
+        <div class="decision-card">
+            <div class="decision-header">
+                <div class="decision-title">${decision.title || decision.proposal || 'قرار'}</div>
+                <div class="decision-result ${decision.result === 'approved' ? 'approved' : 'rejected'}">
+                    ${decision.result === 'approved' ? 'موافق عليه' : 'مرفوض'}
+                </div>
+            </div>
+            <div class="decision-content">
+                ${decision.description || decision.summary || 'لا يوجد وصف متاح'}
+            </div>
+            <div class="decision-votes">
+                <div class="votes-summary">
+                    <span>الأصوات: ${getVotesSummary(decision.votes)}</span>
+                    <span>من اجتماع: ${decision.meeting_agenda}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayAnalytics() {
+    // Simple analytics display
+    document.getElementById('agentActivityChart').innerHTML = `
+        <div style="text-align: center; color: #718096;">
+            <p>📊 رسم بياني لنشاط الوكلاء</p>
+            <p>سيتم تطويره في النسخة القادمة</p>
+        </div>
     `;
+    
+    document.getElementById('taskProgressChart').innerHTML = `
+        <div style="text-align: center; color: #718096;">
+            <p>📈 رسم بياني لتقدم المهام</p>
+            <p>سيتم تطويره في النسخة القادمة</p>
+        </div>
+    `;
+}
+// Modal functions
+function showMeetingDetails(meetingId) {
+    const meeting = allMeetings.find(m => m.session_id === meetingId);
+    if (!meeting) {
+        showNotification('لم يتم العثور على تفاصيل الاجتماع', 'error');
+        return;
+    }
+    
+    document.getElementById('modalTitle').textContent = `تفاصيل الاجتماع - ${extractMeetingTitle(meeting)}`;
+    
+    let modalContent = `
+        <div class="meeting-details-full">
+            <div class="detail-section">
+                <h4>معلومات الاجتماع</h4>
+                <div class="detail-grid">
+                    <div><strong>معرف الجلسة:</strong> ${meeting.session_id}</div>
+                    <div><strong>التاريخ:</strong> ${formatDate(new Date(meeting.timestamp))}</div>
+                    <div><strong>الأجندة:</strong> ${meeting.agenda}</div>
+                    <div><strong>الحالة:</strong> ${meeting.status === 'completed' ? 'مكتمل' : 'قيد التنفيذ'}</div>
+                </div>
+            </div>
+    `;
+    
+    // Add transcript if available
+    if (meeting.transcript && meeting.transcript.length > 0) {
+        modalContent += `
+            <div class="detail-section">
+                <h4>محضر الاجتماع</h4>
+                <div class="transcript-container">
+                    ${meeting.transcript.map(msg => `
+                        <div class="transcript-message">
+                            <div class="message-header">
+                                <strong>${getAgentName(msg.agent)}</strong>
+                                <span class="message-time">${formatTime(msg.timestamp)}</span>
+                            </div>
+                            <div class="message-content">${msg.message}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add decisions if available
+    if (meeting.decisions && meeting.decisions.length > 0) {
+        modalContent += `
+            <div class="detail-section">
+                <h4>القرارات المتخذة</h4>
+                <div class="decisions-container">
+                    ${meeting.decisions.map(decision => `
+                        <div class="decision-item">
+                            <div class="decision-title">${decision.title || decision.proposal}</div>
+                            <div class="decision-result ${decision.result === 'approved' ? 'approved' : 'rejected'}">
+                                ${decision.result === 'approved' ? 'موافق عليه' : 'مرفوض'}
+                            </div>
+                            <div class="decision-votes">الأصوات: ${getVotesSummary(decision.votes)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    modalContent += '</div>';
+    
+    document.getElementById('modalBody').innerHTML = modalContent;
+    document.getElementById('meetingModal').style.display = 'block';
+}
+
+function showAgentDetails(agentId) {
+    const agent = allAgents.find(a => a.id === agentId);
+    if (!agent) return;
+    
+    document.getElementById('modalTitle').textContent = `تفاصيل الوكيل - ${agent.name}`;
+    
+    // Get agent's recent contributions
+    const recentContributions = [];
+    allMeetings.forEach(meeting => {
+        if (meeting.transcript) {
+            const agentMessages = meeting.transcript.filter(msg => msg.agent === agentId);
+            agentMessages.forEach(msg => {
+                recentContributions.push({
+                    ...msg,
+                    meeting_agenda: meeting.agenda,
+                    meeting_date: meeting.timestamp
+                });
+            });
+        }
+    });
+    
+    const modalContent = `
+        <div class="agent-details-full">
+            <div class="agent-overview">
+                <div class="agent-avatar-large">${agent.icon}</div>
+                <div class="agent-info-full">
+                    <h3>${agent.name}</h3>
+                    <p>${agent.role}</p>
+                    <div class="agent-stats-full">
+                        <div class="stat">
+                            <span class="stat-value">${agent.contributions}</span>
+                            <span class="stat-label">مساهمات</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${agent.decisions_made}</span>
+                            <span class="stat-label">قرارات</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recent-contributions">
+                <h4>المساهمات الأخيرة</h4>
+                <div class="contributions-list">
+                    ${recentContributions.slice(-10).reverse().map(contrib => `
+                        <div class="contribution-item">
+                            <div class="contribution-header">
+                                <span class="meeting-ref">${contrib.meeting_agenda}</span>
+                                <span class="contribution-time">${formatDate(new Date(contrib.meeting_date))}</span>
+                            </div>
+                            <div class="contribution-content">${contrib.message}</div>
+                        </div>
+                    `).join('') || '<p>لا توجد مساهمات حديثة</p>'}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('modalBody').innerHTML = modalContent;
+    document.getElementById('meetingModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('meetingModal').style.display = 'none';
+}
+
+// Utility functions
+function updateOverviewStats() {
+    document.getElementById('totalMeetings').textContent = allMeetings.length;
+    document.getElementById('totalDecisions').textContent = allDecisions.length;
+    
+    const totalTasks = (allTasks.todo?.length || 0) + 
+                      (allTasks.in_progress?.length || 0) + 
+                      (allTasks.done?.length || 0);
+    document.getElementById('totalTasks').textContent = totalTasks;
+}
+
+function getAgentName(agentId) {
+    const agent = allAgents.find(a => a.id === agentId);
+    return agent ? agent.name : agentId;
+}
+
+function getVotesSummary(votes) {
+    if (!votes) return 'لا توجد أصوات';
+    
+    const voteCount = Object.keys(votes).length;
+    const approvedCount = Object.values(votes).filter(vote => 
+        vote === 'موافق' || vote === 'approved' || vote === 'yes'
+    ).length;
+    
+    return `${approvedCount}/${voteCount} موافق`;
 }
 
 function getPriorityIcon(priority) {
@@ -367,557 +787,269 @@ function getPriorityLabel(priority) {
     };
     return labels[priority] || 'متوسطة';
 }
+function extractMeetingTitle(meeting) {
+    // Extract meaningful title from meeting data
+    if (meeting.agenda && meeting.agenda !== 'اجتماع دوري') {
+        return meeting.agenda;
+    }
+    
+    // Try to extract from transcript
+    if (meeting.transcript && meeting.transcript.length > 0) {
+        const chairMessages = meeting.transcript.filter(msg => 
+            msg.agent === 'chair' && msg.message.length > 20
+        );
+        
+        if (chairMessages.length > 0) {
+            const firstMessage = chairMessages[0].message;
+            // Extract topic from chair's opening message
+            const topicMatch = firstMessage.match(/نناقش|سنتحدث عن|موضوع|مشروع|فكرة|اقتراح\s+([^.،]+)/);
+            if (topicMatch) {
+                return topicMatch[1].trim();
+            }
+        }
+    }
+    
+    // Try to extract from decisions
+    if (meeting.decisions && meeting.decisions.length > 0) {
+        const firstDecision = meeting.decisions[0];
+        if (firstDecision.title) {
+            return `قرار: ${firstDecision.title}`;
+        }
+    }
+    
+    // Fallback to formatted session ID
+    return formatSessionId(meeting.session_id);
+}
 
-// Meeting details function
-function showMeetingDetails(meetingId) {
+function formatSessionId(sessionId) {
+    // Convert technical session ID to readable format
+    if (sessionId.startsWith('meeting_')) {
+        const datePart = sessionId.replace('meeting_', '').substring(0, 8);
+        const timePart = sessionId.replace('meeting_', '').substring(9);
+        
+        if (datePart.length === 8) {
+            const year = datePart.substring(0, 4);
+            const month = datePart.substring(4, 6);
+            const day = datePart.substring(6, 8);
+            
+            const monthNames = {
+                '01': 'يناير', '02': 'فبراير', '03': 'مارس', '04': 'أبريل',
+                '05': 'مايو', '06': 'يونيو', '07': 'يوليو', '08': 'أغسطس',
+                '09': 'سبتمبر', '10': 'أكتوبر', '11': 'نوفمبر', '12': 'ديسمبر'
+            };
+            
+            return `اجتماع ${day} ${monthNames[month]} ${year}`;
+        }
+    }
+    
+    return sessionId;
+}
+
+function getMeetingPreviewEnhanced(meeting) {
+    let preview = '';
+    
+    // Try to get meaningful preview from different sources
+    if (meeting.decisions && meeting.decisions.length > 0) {
+        const decision = meeting.decisions[0];
+        preview = `📋 تم اتخاذ ${meeting.decisions.length} قرار: ${decision.title || decision.proposal || 'قرار مهم'}`;
+    } else if (meeting.transcript && meeting.transcript.length > 0) {
+        // Find the most meaningful message
+        const meaningfulMessages = meeting.transcript.filter(msg => 
+            msg.type === 'contribution' && 
+            msg.message.length > 30 &&
+            !msg.message.includes('أهلاً وسهلاً') &&
+            !msg.message.includes('شكراً للجميع')
+        );
+        
+        if (meaningfulMessages.length > 0) {
+            const message = meaningfulMessages[0];
+            preview = `💬 ${getAgentName(message.agent)}: ${message.message.substring(0, 120)}...`;
+        }
+    } else if (meeting.minutes) {
+        // Extract from minutes
+        const lines = meeting.minutes.split('\n').filter(line => 
+            line.trim() && 
+            !line.startsWith('#') && 
+            !line.startsWith('**') && 
+            line.length > 30
+        );
+        
+        if (lines.length > 0) {
+            preview = `📄 ${lines[0].substring(0, 120)}...`;
+        }
+    }
+    
+    // Fallback
+    if (!preview) {
+        preview = `🏢 اجتماع شركة AACS - ${meeting.participants ? meeting.participants.length : 10} مشارك`;
+    }
+    
+    return preview;
+}
+
+function calculateMeetingDuration(meeting) {
+    // Calculate meeting duration in minutes
+    if (meeting.transcript && meeting.transcript.length > 1) {
+        const firstMessage = meeting.transcript[0];
+        const lastMessage = meeting.transcript[meeting.transcript.length - 1];
+        
+        if (firstMessage.timestamp && lastMessage.timestamp) {
+            const start = new Date(firstMessage.timestamp);
+            const end = new Date(lastMessage.timestamp);
+            const durationMs = end - start;
+            const durationMinutes = Math.round(durationMs / (1000 * 60));
+            
+            return durationMinutes > 0 ? durationMinutes : 15; // Default 15 minutes
+        }
+    }
+    
+    // Estimate based on transcript length
+    if (meeting.transcript) {
+        return Math.max(5, Math.round(meeting.transcript.length * 0.5));
+    }
+    
+    return 10; // Default duration
+}
+
+// Quick action functions for meeting cards
+function viewMeetingTranscript(meetingId) {
     const meeting = allMeetings.find(m => m.session_id === meetingId);
-    if (!meeting) {
-        showNotification('لم يتم العثور على تفاصيل الاجتماع', 'error');
+    if (!meeting || !meeting.transcript) {
+        showNotification('المحضر غير متوفر', 'warning');
         return;
     }
     
-    // Create modal for meeting details
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'block';
-    modal.innerHTML = `
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h3>📋 تفاصيل الاجتماع</h3>
-                <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+    document.getElementById('modalTitle').textContent = `محضر الاجتماع - ${extractMeetingTitle(meeting)}`;
+    
+    const transcriptHtml = meeting.transcript.map(msg => `
+        <div class="transcript-message">
+            <div class="message-header">
+                <span class="agent-name">${getAgentName(msg.agent)}</span>
+                <span class="message-time">${formatTime(msg.timestamp)}</span>
             </div>
-            <div class="modal-body">
-                <div class="meeting-details">
-                    <div class="detail-row">
-                        <strong>معرف الجلسة:</strong> 
-                        <span>${meeting.session_id}</span>
-                    </div>
-                    <div class="detail-row">
-                        <strong>التاريخ:</strong> 
-                        <span>${formatDate(new Date(meeting.timestamp))}</span>
-                    </div>
-                    <div class="detail-row">
-                        <strong>الأجندة:</strong> 
-                        <span>${meeting.agenda}</span>
-                    </div>
-                    <div class="detail-row">
-                        <strong>عدد القرارات:</strong> 
-                        <span>${meeting.decisions_count || 0}</span>
-                    </div>
-                    <div class="detail-row">
-                        <strong>المشاركون:</strong> 
-                        <span>${meeting.participants ? meeting.participants.length : 10} وكيل</span>
-                    </div>
-                    <div class="detail-row">
-                        <strong>الحالة:</strong> 
-                        <span class="status-badge ${meeting.status || 'completed'}">${meeting.status === 'completed' ? 'مكتمل' : 'قيد التنفيذ'}</span>
-                    </div>
-                </div>
-                <div class="meeting-actions">
-                    <button class="btn secondary" onclick="viewMeetingTranscript('${meeting.session_id}')">
-                        📄 عرض المحضر
-                    </button>
-                    <button class="btn secondary" onclick="viewMeetingDecisions('${meeting.session_id}')">
-                        🗳️ عرض القرارات
-                    </button>
-                    <button class="btn secondary" onclick="viewMeetingMinutes('${meeting.session_id}')">
-                        📝 عرض المحضر المكتوب
-                    </button>
-                </div>
-            </div>
+            <div class="message-content">${msg.message}</div>
+        </div>
+    `).join('');
+    
+    document.getElementById('modalBody').innerHTML = `
+        <div class="transcript-full">
+            ${transcriptHtml}
         </div>
     `;
     
-    document.body.appendChild(modal);
-    
-    // Close modal when clicking outside
-    modal.addEventListener('click', function(event) {
-        if (event.target === modal) {
-            modal.remove();
-        }
-    });
-}
-
-function viewMeetingTranscript(meetingId) {
-    showNotification('جاري تحميل المحضر...', 'info');
-    
-    // Try to open transcript file
-    const transcriptUrl = `./meetings/${meetingId}/transcript.jsonl`;
-    
-    fetch(transcriptUrl)
-        .then(response => {
-            if (response.ok) {
-                // Open in new tab/window
-                window.open(transcriptUrl, '_blank');
-                showNotification('تم فتح المحضر في نافذة جديدة', 'success');
-            } else {
-                throw new Error('Transcript not found');
-            }
-        })
-        .catch(error => {
-            showNotification('لم يتم العثور على المحضر', 'error');
-        });
+    document.getElementById('meetingModal').style.display = 'block';
 }
 
 function viewMeetingDecisions(meetingId) {
-    showNotification('جاري تحميل القرارات...', 'info');
-    
-    // Try to open decisions file
-    const decisionsUrl = `./meetings/${meetingId}/decisions.json`;
-    
-    fetch(decisionsUrl)
-        .then(response => {
-            if (response.ok) {
-                // Open in new tab/window
-                window.open(decisionsUrl, '_blank');
-                showNotification('تم فتح القرارات في نافذة جديدة', 'success');
-            } else {
-                throw new Error('Decisions not found');
-            }
-        })
-        .catch(error => {
-            showNotification('لم يتم العثور على القرارات', 'error');
-        });
-}
-
-function viewMeetingMinutes(meetingId) {
-    showNotification('جاري تحميل المحضر المكتوب...', 'info');
-    
-    // Try to open minutes file
-    const minutesUrl = `./meetings/${meetingId}/minutes.md`;
-    
-    fetch(minutesUrl)
-        .then(response => {
-            if (response.ok) {
-                // Open in new tab/window
-                window.open(minutesUrl, '_blank');
-                showNotification('تم فتح المحضر المكتوب في نافذة جديدة', 'success');
-            } else {
-                throw new Error('Minutes not found');
-            }
-        })
-        .catch(error => {
-            showNotification('لم يتم العثور على المحضر المكتوب', 'error');
-        });
-}
-
-// Data loading functions
-async function loadSystemStatus() {
-    try {
-        updateSystemStatus('نشط', 'success');
-        
-        // Try to load meetings index
-        const meetings = await loadMeetingsIndex();
-        if (meetings && meetings.length > 0) {
-            const lastMeeting = meetings[meetings.length - 1];
-            updateLastMeetingInfo(lastMeeting);
-        }
-        
-        // Calculate next meeting time (every 6 hours)
-        updateNextMeetingTime();
-        
-    } catch (error) {
-        console.error('خطأ في تحميل حالة النظام:', error);
-        updateSystemStatus('خطأ في التحميل', 'error');
+    const meeting = allMeetings.find(m => m.session_id === meetingId);
+    if (!meeting || !meeting.decisions || meeting.decisions.length === 0) {
+        showNotification('لا توجد قرارات في هذا الاجتماع', 'warning');
+        return;
     }
-}
-
-async function loadRecentMeetings() {
-    try {
-        const meetings = await loadMeetingsIndex();
-        displayMeetings(meetings);
-    } catch (error) {
-        console.error('خطأ في تحميل الاجتماعات:', error);
-        document.getElementById('meetingsList').innerHTML = 
-            '<div class="error">خطأ في تحميل الاجتماعات</div>';
-    }
-}
-
-async function loadTaskBoard() {
-    try {
-        const tasks = await loadTasksData();
-        displayTasks(tasks);
-    } catch (error) {
-        console.error('خطأ في تحميل المهام:', error);
-        displayTasksError();
-    }
-}
-
-function loadAgentsStatus() {
-    const agents = [
-        { id: 'ceo', name: 'الرئيس التنفيذي', icon: '👔', status: 'نشط' },
-        { id: 'pm', name: 'مدير المشاريع', icon: '📊', status: 'نشط' },
-        { id: 'cto', name: 'المدير التقني', icon: '💻', status: 'نشط' },
-        { id: 'developer', name: 'المطور', icon: '⚡', status: 'نشط' },
-        { id: 'qa', name: 'ضمان الجودة', icon: '🔍', status: 'نشط' },
-        { id: 'marketing', name: 'التسويق', icon: '📈', status: 'نشط' },
-        { id: 'finance', name: 'المالية', icon: '💰', status: 'نشط' },
-        { id: 'critic', name: 'الناقد', icon: '🤔', status: 'نشط' },
-        { id: 'chair', name: 'رئيس الاجتماع', icon: '🎯', status: 'نشط' },
-        { id: 'memory', name: 'إدارة الذاكرة', icon: '🧠', status: 'نشط' }
-    ];
     
-    displayAgents(agents);
+    document.getElementById('modalTitle').textContent = `قرارات الاجتماع - ${extractMeetingTitle(meeting)}`;
+    
+    const decisionsHtml = meeting.decisions.map(decision => `
+        <div class="decision-detail">
+            <div class="decision-header">
+                <h4>${decision.title || decision.proposal}</h4>
+                <span class="decision-result ${decision.result === 'approved' ? 'approved' : 'rejected'}">
+                    ${decision.result === 'approved' ? '✅ موافق عليه' : '❌ مرفوض'}
+                </span>
+            </div>
+            <div class="decision-content">
+                <p>${decision.description || decision.summary || 'لا يوجد وصف'}</p>
+            </div>
+            <div class="decision-votes">
+                <h5>تفاصيل التصويت:</h5>
+                <div class="votes-grid">
+                    ${Object.entries(decision.votes || {}).map(([agent, vote]) => `
+                        <div class="vote-item">
+                            <span class="voter">${getAgentName(agent)}</span>
+                            <span class="vote ${vote === 'موافق' || vote === 'approved' ? 'approve' : 'reject'}">
+                                ${vote}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('modalBody').innerHTML = `
+        <div class="decisions-full">
+            ${decisionsHtml}
+        </div>
+    `;
+    
+    document.getElementById('meetingModal').style.display = 'block';
 }
 
-// Data fetching functions
-async function loadMeetingsIndex() {
-    try {
-        // Check if running from file:// protocol
-        if (window.location.protocol === 'file:') {
-            // Load from localStorage only when running from file://
-            const localMeetings = localStorage.getItem('aacs_meetings');
-            if (localMeetings) {
-                return JSON.parse(localMeetings);
-            }
-            
-            // Return demo data if no localStorage
-            return getDemoMeetingsData();
-        }
-        
-        // Try to load from localStorage first
-        const localMeetings = localStorage.getItem('aacs_meetings');
-        if (localMeetings) {
-            const parsedMeetings = JSON.parse(localMeetings);
-            // Also try to load server meetings and merge
-            try {
-                const response = await fetch('./meetings/index.json');
-                if (response.ok) {
-                    const data = await response.json();
-                    const serverMeetings = data.meetings || [];
-                    // Merge and deduplicate
-                    const allMeetings = [...serverMeetings, ...parsedMeetings];
-                    const uniqueMeetings = allMeetings.filter((meeting, index, self) => 
-                        index === self.findIndex(m => m.session_id === meeting.session_id)
-                    );
-                    return uniqueMeetings;
-                }
-            } catch (error) {
-                console.warn('Could not load server meetings, using local only');
-            }
-            return parsedMeetings;
-        }
-        
-        // Try to load from meetings/index.json
-        const response = await fetch('./meetings/index.json');
-        if (response.ok) {
-            const data = await response.json();
-            const meetings = data.meetings || [];
-            localStorage.setItem('aacs_meetings', JSON.stringify(meetings));
-            return meetings;
-        }
-        
-        // If index.json doesn't exist, try to build from directory structure
-        // This is a fallback - in real implementation, the Python script should create index.json
-        const meetings = [];
-        
-        // Try to load some recent meetings based on known structure
-        const meetingDirs = [
-            'meeting_20260204_040633',
-            'meeting_20260204_040129', 
-            'meeting_20260204_035945',
-            'meeting_20260204_035753',
-            'meeting_20260204_035159'
-        ];
-        
-        for (const dir of meetingDirs) {
-            try {
-                const minutesResponse = await fetch(`./meetings/${dir}/minutes.md`);
-                if (minutesResponse.ok) {
-                    const minutesText = await minutesResponse.text();
-                    
-                    // Extract meeting info from minutes
-                    const sessionMatch = minutesText.match(/معرف الجلسة: (.+)/);
-                    const agendaMatch = minutesText.match(/الأجندة: (.+)/);
-                    const timestampMatch = minutesText.match(/التاريخ والوقت: (.+)/);
-                    
-                    meetings.push({
-                        session_id: sessionMatch ? sessionMatch[1] : dir,
-                        agenda: agendaMatch ? agendaMatch[1] : 'اجتماع دوري',
-                        timestamp: timestampMatch ? timestampMatch[1] : new Date().toISOString(),
-                        decisions_count: 1,
-                        status: 'completed',
-                        participants: ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory']
-                    });
-                }
-            } catch (error) {
-                console.warn(`Could not load meeting ${dir}:`, error);
-            }
-        }
-        
-        if (meetings.length > 0) {
-            localStorage.setItem('aacs_meetings', JSON.stringify(meetings));
-            return meetings;
-        }
-        
-        return getDemoMeetingsData();
-        
-    } catch (error) {
-        console.warn('لم يتم العثور على فهرس الاجتماعات:', error);
-        return getDemoMeetingsData();
+function exportMeetingReport(meetingId) {
+    const meeting = allMeetings.find(m => m.session_id === meetingId);
+    if (!meeting) {
+        showNotification('الاجتماع غير موجود', 'error');
+        return;
     }
-}
-
-function getDemoMeetingsData() {
-    const demoMeetings = [
-        {
-            session_id: 'demo_meeting_1',
-            agenda: 'مناقشة مشاريع جديدة للشركة',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            decisions_count: 3,
-            status: 'completed',
-            participants: ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory']
+    
+    // Create comprehensive report
+    const report = {
+        meeting_info: {
+            title: extractMeetingTitle(meeting),
+            session_id: meeting.session_id,
+            date: formatDate(new Date(meeting.timestamp)),
+            duration: calculateMeetingDuration(meeting),
+            participants: meeting.participants || ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory']
         },
-        {
-            session_id: 'demo_meeting_2',
-            agenda: 'مراجعة الأداء الشهري وتحديد الأولويات',
-            timestamp: new Date(Date.now() - 7200000).toISOString(),
-            decisions_count: 2,
-            status: 'completed',
-            participants: ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory']
-        },
-        {
-            session_id: 'demo_meeting_3',
-            agenda: 'تطوير استراتيجية التسويق الرقمي',
-            timestamp: new Date(Date.now() - 10800000).toISOString(),
-            decisions_count: 1,
-            status: 'completed',
-            participants: ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory']
+        transcript: meeting.transcript || [],
+        decisions: meeting.decisions || [],
+        minutes: meeting.minutes || '',
+        statistics: {
+            total_messages: meeting.transcript ? meeting.transcript.length : 0,
+            decisions_count: meeting.decisions ? meeting.decisions.length : 0,
+            participants_count: meeting.participants ? meeting.participants.length : 10
         }
-    ];
-    
-    localStorage.setItem('aacs_meetings', JSON.stringify(demoMeetings));
-    return demoMeetings;
-}
-
-async function loadTasksData() {
-    try {
-        // Check if running from file:// protocol
-        if (window.location.protocol === 'file:') {
-            // Load from localStorage only when running from file://
-            const localTasks = localStorage.getItem('aacs_tasks');
-            if (localTasks) {
-                return JSON.parse(localTasks);
-            }
-            
-            // Return demo data if no localStorage
-            return getDemoTasksData();
-        }
-        
-        // Try to load from localStorage first
-        const localTasks = localStorage.getItem('aacs_tasks');
-        if (localTasks) {
-            const parsedTasks = JSON.parse(localTasks);
-            // Merge with server data if available
-            try {
-                const response = await fetch('./board/tasks.json');
-                if (response.ok) {
-                    const serverTasks = await response.json();
-                    // Merge server tasks with local tasks (local takes precedence)
-                    return {
-                        todo: [...(serverTasks.todo || []), ...(parsedTasks.todo || [])],
-                        in_progress: [...(serverTasks.in_progress || []), ...(parsedTasks.in_progress || [])],
-                        done: [...(serverTasks.done || []), ...(parsedTasks.done || [])]
-                    };
-                }
-            } catch (error) {
-                console.warn('Could not load server tasks, using local only');
-            }
-            return parsedTasks;
-        }
-        
-        // Fallback to server data
-        const response = await fetch('./board/tasks.json');
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        const data = await response.json();
-        
-        // Save to localStorage for future use
-        localStorage.setItem('aacs_tasks', JSON.stringify(data));
-        
-        return data;
-    } catch (error) {
-        console.warn('لم يتم العثور على بيانات المهام:', error);
-        return getDemoTasksData();
-    }
-}
-
-function getDemoTasksData() {
-    return {
-        todo: [
-            {
-                id: 'demo_task_1',
-                title: 'تطوير نموذج أولي لمنصة الذكاء الاصطناعي',
-                description: 'مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة',
-                decision_id: 'demo_decision_1',
-                assigned_to: 'developer',
-                created_at: new Date().toISOString(),
-                priority: 'high',
-                status: 'todo'
-            },
-            {
-                id: 'demo_task_2',
-                title: 'إجراء بحث السوق للمنتجات الذكية',
-                description: 'مهمة من قرار: منصة التجارة الإلكترونية الذكية',
-                decision_id: 'demo_decision_2',
-                assigned_to: 'marketing',
-                created_at: new Date().toISOString(),
-                priority: 'medium',
-                status: 'todo'
-            }
-        ],
-        in_progress: [
-            {
-                id: 'demo_task_3',
-                title: 'تصميم قاعدة البيانات للنظام',
-                description: 'مهمة من قرار: نظام إدارة المواهب الذكي',
-                decision_id: 'demo_decision_3',
-                assigned_to: 'cto',
-                created_at: new Date(Date.now() - 86400000).toISOString(),
-                priority: 'high',
-                status: 'in_progress'
-            }
-        ],
-        done: [
-            {
-                id: 'demo_task_4',
-                title: 'إعداد بيئة التطوير الأساسية',
-                description: 'مهمة من قرار: إعداد البنية التحتية',
-                decision_id: 'demo_decision_4',
-                assigned_to: 'developer',
-                created_at: new Date(Date.now() - 172800000).toISOString(),
-                priority: 'medium',
-                status: 'done'
-            }
-        ]
     };
+    
+    // Download as JSON
+    const dataStr = JSON.stringify(report, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `meeting_report_${meeting.session_id}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showNotification('تم تصدير تقرير الاجتماع', 'success');
 }
 
-// Display functions
-function updateSystemStatus(status, type) {
-    const statusElement = document.getElementById('systemStatus');
-    const statusText = statusElement.querySelector('.status-text');
-    const statusDot = statusElement.querySelector('.status-dot');
-    
-    statusText.textContent = status;
-    
-    // Update dot color based on status type
-    statusDot.style.background = type === 'success' ? '#48bb78' : 
-                                 type === 'warning' ? '#ed8936' : '#e53e3e';
-}
-
-function updateLastMeetingInfo(meeting) {
-    const lastMeetingElement = document.getElementById('lastMeeting');
-    if (meeting) {
-        const date = new Date(meeting.timestamp);
-        lastMeetingElement.textContent = `${formatDate(date)} - ${meeting.agenda}`;
-    } else {
-        lastMeetingElement.textContent = 'لا توجد اجتماعات سابقة';
-    }
-}
-
-function updateNextMeetingTime() {
-    const nextMeetingElement = document.getElementById('nextMeeting');
-    
-    // Calculate next meeting (every 6 hours from midnight UTC)
-    const now = new Date();
-    const utcHours = now.getUTCHours();
-    const nextMeetingHour = Math.ceil(utcHours / 6) * 6;
-    
-    const nextMeeting = new Date(now);
-    nextMeeting.setUTCHours(nextMeetingHour, 0, 0, 0);
-    
-    if (nextMeeting <= now) {
-        nextMeeting.setUTCDate(nextMeeting.getUTCDate() + 1);
-        nextMeeting.setUTCHours(0, 0, 0, 0);
-    }
-    
-    nextMeetingElement.textContent = formatDate(nextMeeting);
-}
-
-function displayMeetings(meetings) {
-    const meetingsList = document.getElementById('meetingsList');
-    allMeetings = meetings; // Store globally
-    
-    if (!meetings || meetings.length === 0) {
-        meetingsList.innerHTML = '<div class="loading">لا توجد اجتماعات حتى الآن</div>';
+// Enhanced run meeting function
+function runManualMeeting() {
+    // Show confirmation dialog
+    if (!confirm('هل تريد تشغيل اجتماع AACS جديد؟ سيتم تشغيله في GitHub Actions.')) {
         return;
     }
     
-    const recentMeetings = meetings.slice(-CONFIG.MAX_MEETINGS_DISPLAY).reverse();
+    showNotification('جاري تشغيل الاجتماع...', 'info');
     
-    meetingsList.innerHTML = recentMeetings.map(meeting => `
-        <div class="meeting-item" onclick="showMeetingDetails('${meeting.session_id}')">
-            <div class="meeting-title">${meeting.agenda}</div>
-            <div class="meeting-meta">
-                <span>📅 ${formatDate(new Date(meeting.timestamp))}</span>
-                <span>🗳️ ${meeting.decisions_count || 0} قرارات</span>
-                <span>👥 ${meeting.participants ? meeting.participants.length : 10} مشارك</span>
-            </div>
-            <div class="meeting-actions" onclick="event.stopPropagation()">
-                <button class="meeting-details-btn" onclick="showMeetingDetails('${meeting.session_id}')">
-                    📋 التفاصيل
-                </button>
-            </div>
-        </div>
-    `).join('');
+    // Try to trigger GitHub Actions workflow
+    const repoUrl = `https://github.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}`;
+    const actionsUrl = `${repoUrl}/actions/workflows/meeting.yml`;
+    
+    // Open GitHub Actions page for manual trigger
+    window.open(actionsUrl, '_blank');
+    
+    showNotification('تم فتح صفحة GitHub Actions. يرجى النقر على "Run workflow" لتشغيل الاجتماع.', 'info');
+    
+    // Optionally refresh data after a delay
+    setTimeout(() => {
+        refreshData();
+    }, 5000);
 }
-
-function displayTasks(tasks) {
-    allTasks = tasks; // Store globally for filtering
-    
-    // Make sure elements exist before trying to update them
-    const todoElement = document.getElementById('todoTasks');
-    const inProgressElement = document.getElementById('inProgressTasks');
-    const doneElement = document.getElementById('doneTasks');
-    
-    if (todoElement) {
-        displayTaskColumn('todoTasks', tasks.todo || [], 'لا توجد مهام في الانتظار');
-    }
-    if (inProgressElement) {
-        displayTaskColumn('inProgressTasks', tasks.in_progress || [], 'لا توجد مهام قيد التنفيذ');
-    }
-    if (doneElement) {
-        displayTaskColumn('doneTasks', tasks.done || [], 'لا توجد مهام مكتملة');
-    }
-}
-
-function displayTaskColumn(elementId, tasks, emptyMessage) {
-    const element = document.getElementById(elementId);
-    
-    if (!element) {
-        console.warn(`Element ${elementId} not found`);
-        return;
-    }
-    
-    if (tasks.length === 0) {
-        element.innerHTML = `<div class="loading">${emptyMessage}</div>`;
-        return;
-    }
-    
-    element.innerHTML = tasks.map(task => createTaskHTML(task)).join('');
-}
-
-function displayTasksError() {
-    ['todoTasks', 'inProgressTasks', 'doneTasks'].forEach(id => {
-        document.getElementById(id).innerHTML = '<div class="error">خطأ في التحميل</div>';
-    });
-}
-
-function displayAgents(agents) {
-    const agentsGrid = document.getElementById('agentsGrid');
-    
-    agentsGrid.innerHTML = agents.map(agent => `
-        <div class="agent-item">
-            <div class="agent-icon">${agent.icon}</div>
-            <div class="agent-name">${agent.name}</div>
-            <div class="agent-status">${agent.status}</div>
-        </div>
-    `).join('');
-}
-
-// Utility functions
 function formatDate(date) {
     return date.toLocaleString('ar-SA', {
         year: 'numeric',
@@ -929,28 +1061,17 @@ function formatDate(date) {
     });
 }
 
-function updateLastRefreshTime() {
-    lastRefresh = new Date();
-    document.getElementById('lastUpdate').textContent = formatDate(lastRefresh);
+function formatTime(timestamp) {
+    return new Date(timestamp).toLocaleTimeString('ar-SA', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 function showNotification(message, type = 'info') {
-    // Simple notification - could be enhanced with a proper notification system
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        background: ${type === 'success' ? '#48bb78' : type === 'error' ? '#e53e3e' : '#4299e1'};
-        color: white;
-        border-radius: 8px;
-        z-index: 1001;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        font-weight: 500;
-    `;
     
     document.body.appendChild(notification);
     
@@ -959,34 +1080,150 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Public functions for buttons
-function refreshData() {
-    console.log('🔄 تحديث البيانات...');
-    showNotification('جاري تحديث البيانات...', 'info');
+// Filter functions
+function filterMeetings(searchTerm) {
+    const filteredMeetings = allMeetings.filter(meeting => 
+        meeting.agenda.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        meeting.session_id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
     
-    updateLastRefreshTime();
-    loadSystemStatus();
-    loadRecentMeetings();
-    loadTaskBoard();
-    
-    setTimeout(() => {
-        showNotification('تم تحديث البيانات بنجاح', 'success');
-    }, 1000);
+    displayFilteredMeetings(filteredMeetings);
 }
 
-function viewLogs() {
-    const logsUrl = `https://github.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/actions`;
-    window.open(logsUrl, '_blank');
-    showNotification('تم فتح صفحة السجلات', 'info');
+function filterMeetingsByType(type) {
+    let filteredMeetings = allMeetings;
+    
+    switch (type) {
+        case 'recent':
+            filteredMeetings = allMeetings.slice(-5);
+            break;
+        case 'completed':
+            filteredMeetings = allMeetings.filter(m => m.status === 'completed');
+            break;
+        default:
+            filteredMeetings = allMeetings;
+    }
+    
+    displayFilteredMeetings(filteredMeetings);
+}
+
+function displayFilteredMeetings(meetings) {
+    const container = document.getElementById('meetingsContainer');
+    
+    if (meetings.length === 0) {
+        container.innerHTML = '<div class="loading">لا توجد نتائج</div>';
+        return;
+    }
+    
+    const sortedMeetings = [...meetings].sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    
+    container.innerHTML = sortedMeetings.map(meeting => `
+        <div class="meeting-card" onclick="showMeetingDetails('${meeting.session_id}')">
+            <div class="meeting-header">
+                <div>
+                    <div class="meeting-title">${meeting.agenda}</div>
+                    <div class="meeting-date">${formatDate(new Date(meeting.timestamp))}</div>
+                </div>
+                <div class="meeting-status">${meeting.status === 'completed' ? 'مكتمل' : 'قيد التنفيذ'}</div>
+            </div>
+            <div class="meeting-meta">
+                <span>🗳️ ${meeting.decisions_count || 0} قرارات</span>
+                <span>👥 ${meeting.participants ? meeting.participants.length : 10} مشارك</span>
+                <span>💬 ${meeting.transcript ? meeting.transcript.length : 0} رسالة</span>
+            </div>
+            <div class="meeting-preview">
+                ${getMeetingPreviewEnhanced(meeting)}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Demo data functions
+function getDemoMeetingsData() {
+    return [
+        {
+            session_id: 'demo_meeting_1',
+            agenda: 'مناقشة مشاريع جديدة للشركة',
+            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            decisions_count: 3,
+            status: 'completed',
+            participants: ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory'],
+            transcript: [
+                {
+                    timestamp: new Date().toISOString(),
+                    agent: 'chair',
+                    message: 'أهلاً وسهلاً بالجميع في اجتماع اليوم. سنناقش المشاريع الجديدة المقترحة.',
+                    type: 'contribution'
+                },
+                {
+                    timestamp: new Date().toISOString(),
+                    agent: 'ceo',
+                    message: 'أقترح التركيز على مشاريع الذكاء الاصطناعي والتقنيات الناشئة.',
+                    type: 'contribution'
+                }
+            ],
+            decisions: [
+                {
+                    title: 'الموافقة على مشروع منصة الذكاء الاصطناعي',
+                    result: 'approved',
+                    votes: { ceo: 'موافق', cto: 'موافق', pm: 'موافق' }
+                }
+            ]
+        }
+    ];
+}
+
+function getDemoTasksData() {
+    return {
+        todo: [
+            {
+                id: 'demo_task_1',
+                title: 'تطوير نموذج أولي لمنصة الذكاء الاصطناعي',
+                description: 'مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة',
+                assigned_to: 'developer',
+                created_at: new Date().toISOString(),
+                priority: 'high',
+                status: 'todo'
+            }
+        ],
+        in_progress: [
+            {
+                id: 'demo_task_2',
+                title: 'تصميم قاعدة البيانات للنظام',
+                description: 'مهمة من قرار: نظام إدارة المواهب الذكي',
+                assigned_to: 'cto',
+                created_at: new Date(Date.now() - 86400000).toISOString(),
+                priority: 'high',
+                status: 'in_progress'
+            }
+        ],
+        done: [
+            {
+                id: 'demo_task_3',
+                title: 'إعداد بيئة التطوير الأساسية',
+                description: 'مهمة من قرار: إعداد البنية التحتية',
+                assigned_to: 'developer',
+                created_at: new Date(Date.now() - 172800000).toISOString(),
+                priority: 'medium',
+                status: 'done'
+            }
+        ]
+    };
+}
+
+// Public functions
+function refreshData() {
+    showNotification('جاري تحديث البيانات...', 'info');
+    loadAllData();
 }
 
 // Error handling
 window.addEventListener('error', function(event) {
-    console.error('خطأ في لوحة التحكم:', event.error);
+    console.error('خطأ في لوحة التحكم المحسنة:', event.error);
     showNotification('حدث خطأ في لوحة التحكم', 'error');
 });
 
-// Cleanup on page unload
-window.addEventListener('beforeunload', function() {
-    stopAutoRefresh();
-});
+// Initialize on load
+console.log('✅ AACS Enhanced Dashboard JavaScript تم تحميله بنجاح');

@@ -164,7 +164,7 @@ report = security_manager.generate_security_report()
 ### مشاكل شائعة
 
 #### 1. "أسرار مطلوبة مفقودة"
-- تأكد من إضافة GROQ_API_KEY في GitHub Secrets
+- تأكد من إضافة AI_API_KEY في GitHub Secrets
 - تحقق من صحة تنسيق المفتاح
 
 #### 2. "رفض الوصول"

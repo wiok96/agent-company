@@ -184,13 +184,13 @@ class SecurityManager:
     def _define_required_secrets(self) -> Dict[str, SecretInfo]:
         """تعريف الأسرار المطلوبة"""
         return {
-            "groq_api_key": SecretInfo(
-                name="Groq API Key",
+            "ai_api_key": SecretInfo(
+                name="AI API Key",
                 secret_type=SecretType.API_KEY,
-                description="مفتاح API لخدمة Groq للذكاء الاصطناعي",
+                description="مفتاح API لخدمة الذكاء الاصطناعي",
                 required=True,
-                env_var_name="GROQ_API_KEY",
-                github_secret_name="GROQ_API_KEY",
+                env_var_name="AI_API_KEY",
+                github_secret_name="AI_API_KEY",
                 validation_pattern=r"gsk_[a-zA-Z0-9]{48}"
             ),
             "telegram_bot_token": SecretInfo(

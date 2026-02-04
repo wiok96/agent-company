@@ -45,22 +45,33 @@
 
 ### 1. إعداد GitHub Secrets
 
+اذهب إلى إعدادات المستودع > Secrets and variables > Actions وأضف:
+
 ```
 AI_PROVIDER=groq
 AI_API_KEY=your_groq_api_key
-GITHUB_TOKEN=your_github_token
+GITHUB_TOKEN=your_github_token (يتم إنشاؤه تلقائياً)
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token (اختياري)
 TELEGRAM_CHAT_ID=your_chat_id (اختياري)
 ```
 
-### 2. تشغيل النظام
+### 2. تفعيل GitHub Pages
+
+- اذهب إلى إعدادات المستودع > Pages
+- Source: GitHub Actions
+- سيتم نشر لوحة التحكم تلقائياً
+
+### 3. تشغيل النظام
 
 ```bash
-# تشغيل محلي للاختبار
+# للاختبار المحلي:
+# 1. انسخ .env.example إلى .env
+# 2. أضف مفاتيح API الحقيقية
+# 3. شغل الاجتماع
 python scripts/run_meeting.py
 
-# أو انتظار التشغيل التلقائي كل 6 ساعات
-# أو استخدام التشغيل اليدوي من GitHub Actions
+# للتشغيل على GitHub Actions:
+# اذهب إلى Actions > Manual Meeting > Run workflow
 ```
 
 ### 3. عرض النتائج

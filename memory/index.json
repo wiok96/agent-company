@@ -1,12 +1,12 @@
 {
   "version": "1.0",
   "created_at": "2026-02-04T03:26:06.284058+00:00",
-  "last_updated": "2026-02-04T03:38:26.142952+00:00",
-  "entries_count": 24,
+  "last_updated": "2026-02-04T04:07:29.429989+00:00",
+  "entries_count": 95,
   "categories": {
-    "meetings": 2,
-    "decisions": 2,
-    "reflections": 20,
+    "meetings": 8,
+    "decisions": 7,
+    "reflections": 80,
     "failures": 0
   }
 }

@@ -1,0 +1,24 @@
+{
+  "id": "reflection_meeting_20260204_040633_memory",
+  "timestamp": "2026-02-04T04:07:29.425196+00:00",
+  "type": "reflection",
+  "content": {
+    "agent_id": "memory",
+    "session_id": "meeting_20260204_040633",
+    "reflection_text": "# تقرير المراجعة الذاتية - مدير الذاكرة\n\n## معلومات الاجتماع\n- **معرف الجلسة**: meeting_20260204_040633\n- **التاريخ**: 2026-02-04T04:06:33.458731+00:00\n- **دوري**: Memory Manager\n\n## التقييم الذاتي\n\nأشارك في هذه المناقشة المهمة.\n\n## إحصائيات الأداء\n- **عدد المساهمات**: 6\n- **درجة السمعة الحالية**: 1.00\n- **وزن التصويت**: 0.00\n\n---\n*تم إنتاج هذا التقرير في 2026-02-04T04:07:29.400983+00:00*\n",
+    "extracted_insights": {
+      "successes": [],
+      "failures": [],
+      "improvements": []
+    }
+  },
+  "metadata": {
+    "session_id": "meeting_20260204_040633",
+    "agent_id": "memory"
+  },
+  "tags": [
+    "reflection",
+    "memory",
+    "meeting_20260204_040633"
+  ]
+}

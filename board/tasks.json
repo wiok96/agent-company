@@ -199,6 +199,366 @@
       "created_at": "2026-02-04T03:38:26.122042+00:00",
       "priority": "medium",
       "status": "todo"
+    },
+    {
+      "id": "task_021",
+      "title": "إنشاء مستودع GitHub لمشروع نظام إدارة المواهب الذكي",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_055159_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:51:59.903742+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_022",
+      "title": "تصميم قاعدة بيانات للموظفين والمهارات",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_055159_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:51:59.903754+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_023",
+      "title": "تطوير خوارزميات تحليل الأداء والمواهب",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_055159_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:51:59.903757+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_024",
+      "title": "بناء نظام تقييم الموظفين الذكي",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_055159_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:51:59.903759+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_025",
+      "title": "إنشاء واجهة إدارة الموارد البشرية",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_055159_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:51:59.903761+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_026",
+      "title": "تطوير تقارير تحليلية للمديرين",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_055159_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:51:59.903762+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_027",
+      "title": "اختبار النظام مع أقسام الموارد البشرية",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_055159_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:51:59.903763+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_028",
+      "title": "إنشاء مستودع GitHub لمشروع منصة التجارة الإلكترونية الذكية",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082909+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_029",
+      "title": "تصميم قاعدة بيانات للمنتجات والعملاء",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082919+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_030",
+      "title": "تطوير نظام إدارة المخزون الذكي",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082922+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_031",
+      "title": "بناء واجهة متجر إلكتروني متجاوبة",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082924+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_032",
+      "title": "تطوير نظام دفع آمن ومتعدد الطرق",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082925+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_033",
+      "title": "إنشاء نظام توصيات ذكي للمنتجات",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082927+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_034",
+      "title": "تطوير لوحة تحكم للتجار",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082928+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_035",
+      "title": "اختبار الأمان والأداء",
+      "description": "مهمة من قرار: منصة التجارة الإلكترونية الذكية",
+      "decision_id": "decision_20260204_055830_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:58:30.082929+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_036",
+      "title": "إنشاء مستودع GitHub لمشروع منصة الذكاء الاصطناعي للشركات الناشئة",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060026_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:00:26.234589+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_037",
+      "title": "تصميم قاعدة بيانات للشركات الناشئة والتحليلات",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060026_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:00:26.234601+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_038",
+      "title": "تطوير نماذج الذكاء الاصطناعي للتحليل الاستراتيجي",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060026_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:00:26.234605+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_039",
+      "title": "بناء واجهة API لخدمات التحليل",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060026_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:00:26.234607+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_040",
+      "title": "إنشاء لوحة تحكم تفاعلية للعملاء",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060026_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:00:26.234609+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_041",
+      "title": "تطوير نظام اشتراكات ومدفوعات",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060026_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:00:26.234610+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_042",
+      "title": "إجراء اختبارات شاملة مع شركات ناشئة تجريبية",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060026_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:00:26.234612+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_043",
+      "title": "إنشاء مستودع GitHub لمشروع نظام إدارة المواهب الذكي",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_060205_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:02:10.730395+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_044",
+      "title": "تصميم قاعدة بيانات للموظفين والمهارات",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_060205_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:02:10.730405+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_045",
+      "title": "تطوير خوارزميات تحليل الأداء والمواهب",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_060205_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:02:10.730411+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_046",
+      "title": "بناء نظام تقييم الموظفين الذكي",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_060205_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:02:10.730413+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_047",
+      "title": "إنشاء واجهة إدارة الموارد البشرية",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_060205_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:02:10.730415+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_048",
+      "title": "تطوير تقارير تحليلية للمديرين",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_060205_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:02:10.730417+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_049",
+      "title": "اختبار النظام مع أقسام الموارد البشرية",
+      "description": "مهمة من قرار: نظام إدارة المواهب الذكي",
+      "decision_id": "decision_20260204_060205_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:02:10.730418+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_050",
+      "title": "إنشاء مستودع GitHub لمشروع منصة الذكاء الاصطناعي للشركات الناشئة",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060716_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:07:22.949908+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_051",
+      "title": "تصميم قاعدة بيانات للشركات الناشئة والتحليلات",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060716_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:07:22.949921+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_052",
+      "title": "تطوير نماذج الذكاء الاصطناعي للتحليل الاستراتيجي",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060716_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:07:22.949924+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_053",
+      "title": "بناء واجهة API لخدمات التحليل",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060716_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:07:22.949927+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_054",
+      "title": "إنشاء لوحة تحكم تفاعلية للعملاء",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060716_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:07:22.949929+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_055",
+      "title": "تطوير نظام اشتراكات ومدفوعات",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060716_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:07:22.949930+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_056",
+      "title": "إجراء اختبارات شاملة مع شركات ناشئة تجريبية",
+      "description": "مهمة من قرار: منصة الذكاء الاصطناعي للشركات الناشئة",
+      "decision_id": "decision_20260204_060716_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T04:07:22.949932+00:00",
+      "priority": "medium",
+      "status": "todo"
     }
   ],
   "in_progress": [],

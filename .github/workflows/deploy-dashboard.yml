@@ -1,12 +1,11 @@
-name: Deploy AACS Dashboard
+name: Deploy Enhanced Dashboard
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
     paths:
       - 'dashboard/**'
-      - 'meetings/**'
-      - 'board/**'
+      - '.github/workflows/deploy-dashboard.yml'
   workflow_dispatch:
 
 permissions:
@@ -24,46 +23,33 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-    
-    - name: Prepare dashboard files
-      run: |
-        # إنشاء مجلد البناء
-        mkdir -p _site
-        
-        # نسخ ملفات لوحة التحكم
-        cp -r dashboard/* _site/
-        
-        # نسخ بيانات الاجتماعات والمهام إذا كانت موجودة
-        if [ -d "meetings" ]; then
-          cp -r meetings _site/
-        fi
-        
-        if [ -d "board" ]; then
-          cp -r board _site/
-        fi
-        
-        # إنشاء ملف robots.txt
-        echo "User-agent: *" > _site/robots.txt
-        echo "Disallow: /meetings/" >> _site/robots.txt
-        echo "Disallow: /board/" >> _site/robots.txt
-        
-        # إنشاء ملف .nojekyll لتجنب معالجة Jekyll
-        touch _site/.nojekyll
-        
-        echo "✅ تم تحضير ملفات لوحة التحكم"
-    
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: '_site'
-    
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare Dashboard
+        run: |
+          # Copy dashboard files to root for GitHub Pages
+          cp -r dashboard/* .
+          
+          # Use the GitHub Pages specific HTML file
+          cp github-pages.html index.html
+          
+          # Create a simple redirect for the original dashboard folder
+          mkdir -p dashboard
+          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=../"></head><body>Redirecting...</body></html>' > dashboard/index.html
+          
+          # Ensure all files are present
+          ls -la
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

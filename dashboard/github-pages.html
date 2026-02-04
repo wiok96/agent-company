@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم AACS V0 - وضع مستقل</title>
+    <title>لوحة تحكم AACS V0</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 </head>
 <body>
     <div class="container">
@@ -15,7 +18,7 @@
         <header class="header">
             <div class="header-content">
                 <h1 class="title">🤖 نظام الشركة البرمجية الذاتية</h1>
-                <p class="subtitle">AACS V0 - Autonomous AI Company System (وضع مستقل)</p>
+                <p class="subtitle">AACS V0 - Autonomous AI Company System (GitHub Pages)</p>
                 <div class="status-indicator" id="systemStatus">
                     <span class="status-dot"></span>
                     <span class="status-text">جاري التحميل...</span>
@@ -23,14 +26,20 @@
             </div>
         </header>
 
-        <!-- Notice -->
-        <div class="card" style="background: #fef5e7; border-left: 4px solid #d69e2e;">
-            <h3 style="color: #d69e2e; margin-bottom: 10px;">📋 وضع العرض التوضيحي</h3>
-            <p style="color: #744210;">
-                هذه نسخة مستقلة من لوحة التحكم تعمل بدون خادم محلي. 
-                للحصول على التجربة الكاملة مع تحميل البيانات الحقيقية، يرجى استخدام:
-                <code style="background: #fff; padding: 2px 6px; border-radius: 4px;">start-dashboard.bat</code>
+        <!-- GitHub Pages Notice -->
+        <div class="card" style="background: #e6fffa; border-left: 4px solid #38b2ac;">
+            <h3 style="color: #38b2ac; margin-bottom: 10px;">🌐 GitHub Pages</h3>
+            <p style="color: #234e52;">
+                هذه النسخة تعمل على GitHub Pages. إذا لم تر التحديثات الجديدة:
             </p>
+            <div style="margin-top: 10px;">
+                <button class="btn secondary" onclick="clearBrowserCache()" style="margin-left: 10px;">
+                    🗑️ مسح ذاكرة المتصفح
+                </button>
+                <button class="btn secondary" onclick="forceRefresh()">
+                    🔄 تحديث قسري
+                </button>
+            </div>
         </div>
 
         <!-- Main Dashboard -->
@@ -47,9 +56,9 @@
                         <span class="btn-icon">🔄</span>
                         <span class="btn-text">تحديث البيانات</span>
                     </button>
-                    <button class="action-btn secondary" onclick="clearLocalData()">
-                        <span class="btn-icon">🗑️</span>
-                        <span class="btn-text">مسح البيانات المحلية</span>
+                    <button class="action-btn secondary" onclick="viewLogs()">
+                        <span class="btn-icon">📋</span>
+                        <span class="btn-text">عرض السجلات</span>
                     </button>
                 </div>
             </section>
@@ -68,7 +77,7 @@
                     </div>
                     <div class="status-item">
                         <div class="status-label">حالة التشغيل</div>
-                        <div class="status-value" id="runStatus">وضع العرض التوضيحي</div>
+                        <div class="status-value" id="runStatus">GitHub Pages</div>
                     </div>
                     <div class="status-item">
                         <div class="status-label">عدد الوكلاء</div>
@@ -146,7 +155,7 @@
                 <p>سيتم إنشاء اجتماع تجريبي مع مهام جديدة.</p>
                 <div class="form-group">
                     <label for="meetingAgenda">أجندة الاجتماع:</label>
-                    <input type="text" id="meetingAgenda" value="اجتماع يدوي من لوحة التحكم" />
+                    <input type="text" id="meetingAgenda" value="اجتماع يدوي من GitHub Pages" />
                 </div>
                 <div class="form-group">
                     <label>
@@ -163,18 +172,39 @@
     </div>
 
     <script src="script.js"></script>
-    <script src="github-pages-fix.js"></script>
     <script>
-        // Add clear local data function
-        function clearLocalData() {
-            if (confirm('هل أنت متأكد من مسح جميع البيانات المحلية؟')) {
-                localStorage.removeItem('aacs_tasks');
-                localStorage.removeItem('aacs_meetings');
-                showNotification('تم مسح البيانات المحلية', 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
+        // GitHub Pages specific functions
+        function clearBrowserCache() {
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        caches.delete(name);
+                    });
+                });
             }
+            
+            // Clear localStorage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            showNotification('تم مسح ذاكرة المتصفح', 'success');
+            
+            setTimeout(() => {
+                location.reload(true);
+            }, 1000);
+        }
+        
+        function forceRefresh() {
+            // Force refresh with cache bypass
+            window.location.reload(true);
+        }
+        
+        // Override CONFIG for GitHub Pages
+        if (window.location.hostname.includes('github.io')) {
+            CONFIG.GITHUB_REPO = window.location.pathname.split('/')[1];
+            CONFIG.GITHUB_USER = window.location.hostname.split('.')[0];
+            
+            console.log('🌐 GitHub Pages detected:', CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO);
         }
     </script>
 </body>

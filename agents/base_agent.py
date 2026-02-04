@@ -157,6 +157,7 @@ class SimpleAgent(BaseAgent):
     def __init__(self, profile: AgentProfile, response_templates: Dict[str, List[str]] = None):
         super().__init__(profile)
         self.response_templates = response_templates or self._get_default_templates()
+        self.idea_generator = None  # سيتم تعيينه من المدير
     
     def _get_default_templates(self) -> Dict[str, List[str]]:
         """قوالب الردود الافتراضية"""
@@ -540,6 +541,33 @@ class SimpleAgent(BaseAgent):
 """
 
         return agent_info
+    
+    def generate_project_idea(self, context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """توليد فكرة مشروع جديدة (للـ CEO Agent فقط)"""
+        if self.profile.id != "ceo":
+            raise ValueError("توليد الأفكار متاح فقط للرئيس التنفيذي")
+        
+        if not self.idea_generator:
+            raise ValueError("مولد الأفكار غير مُهيأ")
+        
+        # إضافة سياق الوكيل للمولد
+        agent_context = context or {}
+        agent_context.update({
+            "agent_expertise": self.profile.expertise_areas,
+            "agent_personality": self.profile.personality_traits,
+            "preferred_category": self._determine_preferred_category(),
+            "max_budget": 30000  # ميزانية افتراضية
+        })
+        
+        return self.idea_generator.generate_project_idea(agent_context)
+    
+    def _determine_preferred_category(self) -> str:
+        """تحديد الفئة المفضلة بناءً على شخصية الوكيل"""
+        if self.profile.id == "ceo":
+            # الرئيس التنفيذي يفضل المشاريع الاستراتيجية
+            import random
+            return random.choice(["saas", "tool", "bot"])
+        return "tool"  # افتراضي
     
     def vote_on_proposal(self, proposal: Dict[str, Any]) -> str:
         """التصويت على اقتراح بناءً على دور الوكيل وتحليل المشروع"""

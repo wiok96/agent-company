@@ -7,15 +7,21 @@ from datetime import datetime, timezone
 from .base_agent import BaseAgent, SimpleAgent, AGENT_PROFILES, Message
 from core.config import Config, AGENT_ROLES, VOTING_WEIGHTS
 from core.logger import setup_logger, SecureLogger
+from core.idea_generator import IdeaGenerator
 
 
 class AgentManager:
     """مدير الوكلاء الأساسي"""
     
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, memory_system=None):
         self.config = config
         self.logger = SecureLogger(setup_logger("agent_manager"))
         self.agents: Dict[str, BaseAgent] = {}
+        
+        # تهيئة مولد الأفكار إذا كان نظام الذاكرة متوفر
+        self.idea_generator = None
+        if memory_system:
+            self.idea_generator = IdeaGenerator(config, memory_system)
         
         # تهيئة الوكلاء
         self._initialize_agents()
@@ -39,6 +45,11 @@ class AgentManager:
             
             # إنشاء الوكيل
             agent = SimpleAgent(profile, self._get_agent_templates(agent_id))
+            
+            # تعيين مولد الأفكار للرئيس التنفيذي
+            if agent_id == "ceo" and self.idea_generator:
+                agent.idea_generator = self.idea_generator
+            
             self.agents[agent_id] = agent
             
             self.logger.info(f"✅ تم تهيئة الوكيل: {profile.name} ({agent_id})")
@@ -382,3 +393,22 @@ class AgentManager:
             }
         
         return stats
+    
+    def generate_project_idea(self, context: Dict[str, Any] = None) -> Dict[str, Any]:
+        """توليد فكرة مشروع جديدة من الرئيس التنفيذي"""
+        ceo_agent = self.get_agent("ceo")
+        
+        if not ceo_agent:
+            raise ValueError("الرئيس التنفيذي غير موجود")
+        
+        if not hasattr(ceo_agent, 'generate_project_idea'):
+            raise ValueError("مولد الأفكار غير متوفر للرئيس التنفيذي")
+        
+        return ceo_agent.generate_project_idea(context)
+    
+    def get_idea_generator_statistics(self) -> Dict[str, Any]:
+        """الحصول على إحصائيات مولد الأفكار"""
+        if not self.idea_generator:
+            return {"error": "مولد الأفكار غير مُهيأ"}
+        
+        return self.idea_generator.get_template_statistics()

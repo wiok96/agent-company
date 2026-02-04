@@ -48,8 +48,8 @@ class MeetingOrchestrator:
         self.logger = SecureLogger(setup_logger("orchestrator"))
         
         # إنشاء مدير الوكلاء ونظام الذاكرة ومدقق المخرجات ومدير الإشعارات
-        self.agent_manager = AgentManager(config)
         self.memory_system = MemorySystem(config)
+        self.agent_manager = AgentManager(config, self.memory_system)
         self.artifact_validator = ArtifactValidator(config)
         self.notification_manager = NotificationManager(config)
         
@@ -451,7 +451,74 @@ class MeetingOrchestrator:
         return is_valid
     
     def _generate_real_project_suggestions(self) -> List[Dict[str, Any]]:
-        """توليد اقتراحات مشاريع حقيقية ومبتكرة من كل وكيل"""
+        """توليد اقتراحات مشاريع حقيقية ومبتكرة من كل وكيل باستخدام مولد الأفكار"""
+        suggestions = []
+        
+        # استخدام مولد الأفكار للحصول على أفكار متنوعة
+        try:
+            # توليد 3 أفكار مختلفة
+            for i in range(3):
+                context = {
+                    "meeting_context": "brainstorming_session",
+                    "iteration": i,
+                    "preferred_category": ["saas", "tool", "bot"][i % 3]  # تنويع الفئات
+                }
+                
+                idea = self.agent_manager.generate_project_idea(context)
+                
+                # تحويل الفكرة لصيغة الاقتراح
+                suggestion_text = self._format_idea_as_suggestion(idea, ["ceo", "cto", "developer"][i])
+                
+                suggestions.append({
+                    "agent": ["ceo", "cto", "developer"][i],
+                    "suggestion": suggestion_text,
+                    "idea_data": idea,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+            
+            self.logger.info(f"✅ تم توليد {len(suggestions)} اقتراح باستخدام مولد الأفكار")
+            
+        except Exception as e:
+            self.logger.warning(f"فشل في استخدام مولد الأفكار: {e}")
+            # العودة للطريقة القديمة كبديل
+            suggestions = self._generate_fallback_suggestions()
+        
+        return suggestions
+    
+    def _format_idea_as_suggestion(self, idea: Dict[str, Any], agent_id: str) -> str:
+        """تحويل الفكرة المولدة لصيغة اقتراح طبيعي"""
+        
+        title = idea.get("title", "مشروع جديد")
+        description = idea.get("description", "")
+        problem = idea.get("problem_statement", "")
+        market = idea.get("target_market", "")
+        
+        # تخصيص الاقتراح حسب الوكيل
+        if agent_id == "ceo":
+            intro = f"كرئيس تنفيذي لشركة هايتك، أقترح تطوير '{title}'."
+        elif agent_id == "cto":
+            intro = f"من منظور تقني، أرى فرصة كبيرة في '{title}'."
+        else:  # developer
+            intro = f"كمطور، أعتقد أن '{title}' مشروع قابل للتنفيذ وسيكون مفيداً."
+        
+        suggestion = f"""{intro}
+
+{description}
+
+هذا المشروع يحل مشكلة حقيقية: {problem}
+
+السوق المستهدف: {market}
+
+التقنيات المقترحة: {', '.join(idea.get('tech_stack', [])[:3])}
+
+العائد المتوقع: {idea.get('financial_projection', {}).get('roi_percentage', 0):.0f}% ROI
+
+أعتقد أن هذا المشروع سيكون إضافة قيمة لمحفظة شركة هايتك."""
+        
+        return suggestion
+    
+    def _generate_fallback_suggestions(self) -> List[Dict[str, Any]]:
+        """توليد اقتراحات احتياطية (الطريقة القديمة)"""
         import random
         
         # مشاريع حقيقية ومفيدة مقسمة حسب دور كل وكيل

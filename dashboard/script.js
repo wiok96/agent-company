@@ -22,49 +22,12 @@ let allAgents = [];
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 AACS Enhanced Dashboard تم التحميل');
-    
-    // Add GitHub Pages detection
-    if (window.location.hostname.includes('github.io')) {
-        const repoName = window.location.pathname.split('/')[1];
-        console.log('🌐 GitHub Pages detected:', window.location.hostname.split('.')[0] + '/' + repoName);
-    }
-    
-    // Debug CSS loading
-    console.log('📱 Screen size:', window.innerWidth + 'x' + window.innerHeight);
-    console.log('🎨 Body computed styles:', {
-        background: window.getComputedStyle(document.body).background,
-        fontFamily: window.getComputedStyle(document.body).fontFamily,
-        direction: window.getComputedStyle(document.body).direction
-    });
-    
-    // Check if critical elements exist
-    const criticalElements = ['totalMeetings', 'totalDecisions', 'totalTasks'];
-    criticalElements.forEach(id => {
-        const element = document.getElementById(id);
-        console.log(`Element ${id}:`, element ? 'Found' : 'Missing');
-    });
-    
     initializeDashboard();
     setupEventListeners();
     startAutoRefresh();
 });
 
 function initializeDashboard() {
-    // Check if CSS is loaded properly
-    const bodyStyles = window.getComputedStyle(document.body);
-    const background = bodyStyles.background || bodyStyles.backgroundColor;
-    
-    if (!background || background === 'rgba(0, 0, 0, 0)' || background === 'transparent') {
-        console.warn('⚠️ CSS may not be loading properly');
-        showNotification('قد تكون هناك مشكلة في تحميل التصميم', 'warning');
-    }
-    
-    // Show loading state
-    const loadingElements = document.querySelectorAll('.loading');
-    loadingElements.forEach(el => {
-        el.textContent = 'جاري التحميل...';
-    });
-    
     loadAllData();
 }
 
@@ -159,25 +122,11 @@ async function loadAllData() {
             loadAgentsData()
         ]);
         
-        // Ensure DOM elements exist before updating
-        setTimeout(() => {
-            updateOverviewStats();
-        }, 100);
-        
+        updateOverviewStats();
         showNotification('تم تحميل البيانات بنجاح', 'success');
     } catch (error) {
         console.error('خطأ في تحميل البيانات:', error);
         showNotification('خطأ في تحميل البيانات', 'error');
-        
-        // Load demo data as fallback
-        allMeetings = getDemoMeetingsData();
-        allTasks = getDemoTasksData();
-        loadDecisionsData();
-        loadAgentsData();
-        
-        setTimeout(() => {
-            updateOverviewStats();
-        }, 100);
     }
 }
 
@@ -451,7 +400,7 @@ function displayOverview() {
         const lastMeeting = allMeetings[allMeetings.length - 1];
         document.getElementById('lastMeetingOverview').innerHTML = `
             <div class="meeting-summary">
-                <h4>${extractMeetingTitle(lastMeeting)}</h4>
+                <h4>${lastMeeting.agenda}</h4>
                 <p><strong>التاريخ:</strong> ${formatDate(new Date(lastMeeting.timestamp))}</p>
                 <p><strong>القرارات:</strong> ${lastMeeting.decisions_count || 0}</p>
                 <p><strong>المشاركون:</strong> ${lastMeeting.participants ? lastMeeting.participants.length : 10} وكيل</p>
@@ -498,7 +447,7 @@ function displayMeetings() {
         <div class="meeting-card enhanced-card" onclick="showMeetingDetails('${meeting.session_id}')">
             <div class="meeting-header">
                 <div class="meeting-title-section">
-                    <div class="meeting-main-title">${extractMeetingTitle(meeting)}</div>
+                    <div class="meeting-main-title">${meeting.agenda || extractMeetingTitle(meeting)}</div>
                     <div class="meeting-subtitle">
                         <span class="session-id">جلسة: ${formatSessionId(meeting.session_id)}</span>
                         <span class="meeting-date">${formatDate(new Date(meeting.timestamp))}</span>
@@ -553,6 +502,34 @@ function displayMeetings() {
             </div>
         </div>
     `).join('');
+}
+
+function getMeetingPreview(meeting) {
+    if (meeting.minutes) {
+        // Extract first paragraph from minutes
+        const lines = meeting.minutes.split('\n').filter(line => line.trim());
+        const contentLines = lines.filter(line => 
+            !line.startsWith('#') && 
+            !line.startsWith('**') && 
+            line.length > 20
+        );
+        
+        if (contentLines.length > 0) {
+            return contentLines[0].substring(0, 150) + '...';
+        }
+    }
+    
+    if (meeting.transcript && meeting.transcript.length > 0) {
+        const firstMessage = meeting.transcript.find(msg => 
+            msg.type === 'contribution' && msg.message.length > 20
+        );
+        
+        if (firstMessage) {
+            return firstMessage.message.substring(0, 150) + '...';
+        }
+    }
+    
+    return 'انقر لعرض تفاصيل الاجتماع';
 }
 
 function displayAgents() {
@@ -659,6 +636,7 @@ function displayAnalytics() {
         </div>
     `;
 }
+
 // Modal functions
 function showMeetingDetails(meetingId) {
     const meeting = allMeetings.find(m => m.session_id === meetingId);
@@ -667,7 +645,7 @@ function showMeetingDetails(meetingId) {
         return;
     }
     
-    document.getElementById('modalTitle').textContent = `تفاصيل الاجتماع - ${extractMeetingTitle(meeting)}`;
+    document.getElementById('modalTitle').textContent = `تفاصيل الاجتماع - ${meeting.agenda}`;
     
     let modalContent = `
         <div class="meeting-details-full">
@@ -793,25 +771,15 @@ function showAgentDetails(agentId) {
 function closeModal() {
     document.getElementById('meetingModal').style.display = 'none';
 }
-
 // Utility functions
 function updateOverviewStats() {
-    const totalMeetingsEl = document.getElementById('totalMeetings');
-    const totalDecisionsEl = document.getElementById('totalDecisions');
-    const totalTasksEl = document.getElementById('totalTasks');
+    document.getElementById('totalMeetings').textContent = allMeetings.length;
+    document.getElementById('totalDecisions').textContent = allDecisions.length;
     
-    if (totalMeetingsEl) {
-        totalMeetingsEl.textContent = allMeetings.length;
-    }
-    if (totalDecisionsEl) {
-        totalDecisionsEl.textContent = allDecisions.length;
-    }
-    if (totalTasksEl) {
-        const totalTasks = (allTasks.todo?.length || 0) + 
-                          (allTasks.in_progress?.length || 0) + 
-                          (allTasks.done?.length || 0);
-        totalTasksEl.textContent = totalTasks;
-    }
+    const totalTasks = (allTasks.todo?.length || 0) + 
+                      (allTasks.in_progress?.length || 0) + 
+                      (allTasks.done?.length || 0);
+    document.getElementById('totalTasks').textContent = totalTasks;
 }
 
 function getAgentName(agentId) {
@@ -847,6 +815,8 @@ function getPriorityLabel(priority) {
     };
     return labels[priority] || 'متوسطة';
 }
+
+// Enhanced meeting display functions
 function extractMeetingTitle(meeting) {
     // Extract meaningful title from meeting data
     if (meeting.agenda && meeting.agenda !== 'اجتماع دوري') {
@@ -1059,7 +1029,7 @@ function exportMeetingReport(meetingId) {
             session_id: meeting.session_id,
             date: formatDate(new Date(meeting.timestamp)),
             duration: calculateMeetingDuration(meeting),
-            participants: meeting.participants || ['ceo', 'cto', 'pm', 'developer', 'qa', 'marketing', 'finance', 'critic', 'chair', 'memory']
+            participants: meeting.participants || AGENT_ROLES
         },
         transcript: meeting.transcript || [],
         decisions: meeting.decisions || [],
@@ -1109,8 +1079,7 @@ function runManualMeeting() {
     setTimeout(() => {
         refreshData();
     }, 5000);
-}
-function formatDate(date) {
+} {
     return date.toLocaleString('ar-SA', {
         year: 'numeric',
         month: 'short',
@@ -1129,12 +1098,6 @@ function formatTime(timestamp) {
 }
 
 function showNotification(message, type = 'info') {
-    // Ensure DOM is ready
-    if (!document.body) {
-        console.log(`Notification (${type}): ${message}`);
-        return;
-    }
-    
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
@@ -1142,9 +1105,7 @@ function showNotification(message, type = 'info') {
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
+        notification.remove();
     }, 3000);
 }
 
@@ -1202,7 +1163,7 @@ function displayFilteredMeetings(meetings) {
                 <span>💬 ${meeting.transcript ? meeting.transcript.length : 0} رسالة</span>
             </div>
             <div class="meeting-preview">
-                ${getMeetingPreviewEnhanced(meeting)}
+                ${getMeetingPreview(meeting)}
             </div>
         </div>
     `).join('');
@@ -1287,45 +1248,71 @@ function refreshData() {
     loadAllData();
 }
 
-// Debug function for testing
-window.debugDashboard = function() {
-    console.log('=== AACS Dashboard Debug Info ===');
-    console.log('Current section:', currentSection);
-    console.log('All meetings:', allMeetings.length);
-    console.log('All tasks:', {
-        todo: allTasks.todo?.length || 0,
-        in_progress: allTasks.in_progress?.length || 0,
-        done: allTasks.done?.length || 0
+// Utility functions
+function formatDate(date) {
+    return date.toLocaleString('ar-SA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC'
     });
-    console.log('All decisions:', allDecisions.length);
-    console.log('All agents:', allAgents.length);
-    
-    // Test critical elements
-    const elements = ['totalMeetings', 'totalDecisions', 'totalTasks'];
-    elements.forEach(id => {
-        const el = document.getElementById(id);
-        console.log(`${id}:`, el ? `Found (${el.textContent})` : 'Missing');
+}
+
+function formatTime(timestamp) {
+    return new Date(timestamp).toLocaleTimeString('ar-SA', {
+        hour: '2-digit',
+        minute: '2-digit'
     });
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
     
-    return {
-        meetings: allMeetings.length,
-        tasks: allTasks,
-        decisions: allDecisions.length,
-        agents: allAgents.length
-    };
-};
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Enhanced run meeting function
+function runManualMeeting() {
+    // Show confirmation dialog
+    if (!confirm('هل تريد تشغيل اجتماع AACS جديد؟ سيتم تشغيله في GitHub Actions.')) {
+        return;
+    }
+    
+    showNotification('جاري تشغيل الاجتماع...', 'info');
+    
+    // Try to trigger GitHub Actions workflow
+    const repoUrl = `https://github.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}`;
+    const actionsUrl = `${repoUrl}/actions/workflows/meeting.yml`;
+    
+    // Open GitHub Actions page for manual trigger
+    window.open(actionsUrl, '_blank');
+    
+    showNotification('تم فتح صفحة GitHub Actions. يرجى النقر على "Run workflow" لتشغيل الاجتماع.', 'info');
+    
+    // Optionally refresh data after a delay
+    setTimeout(() => {
+        refreshData();
+    }, 5000);
+}
+
+// Public functions
+function refreshData() {
+    showNotification('جاري تحديث البيانات...', 'info');
+    loadAllData();
+}
 
 // Error handling
 window.addEventListener('error', function(event) {
     console.error('خطأ في لوحة التحكم المحسنة:', event.error);
-    console.error('Stack trace:', event.error?.stack);
     showNotification('حدث خطأ في لوحة التحكم', 'error');
-});
-
-// Handle unhandled promise rejections
-window.addEventListener('unhandledrejection', function(event) {
-    console.error('خطأ في Promise:', event.reason);
-    showNotification('حدث خطأ في تحميل البيانات', 'error');
 });
 
 // Initialize on load

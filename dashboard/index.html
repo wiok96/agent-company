@@ -3,80 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم AACS V0 المحسنة</title>
-    <link rel="stylesheet" href="styles.css?v=2.0">
+    <title>لوحة تحكم AACS المحسنة</title>
+    <link rel="stylesheet" href="styles.css?v=3.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">🤖 AACS V0</div>
-                <div class="version">نظام الشركة الذاتية</div>
+                <h1 class="logo">🤖 AACS</h1>
+                <p class="version">النسخة المحسنة</p>
             </div>
             
-            <nav class="nav-menu">
-                <div class="nav-item active" data-section="overview">
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="overview">
                     <span class="nav-icon">📊</span>
                     <span class="nav-text">نظرة عامة</span>
-                </div>
-                <div class="nav-item" data-section="meetings">
+                </li>
+                <li class="nav-item" data-section="meetings">
                     <span class="nav-icon">📅</span>
                     <span class="nav-text">الاجتماعات</span>
-                </div>
-                <div class="nav-item" data-section="agents">
+                </li>
+                <li class="nav-item" data-section="agents">
                     <span class="nav-icon">🤖</span>
                     <span class="nav-text">الوكلاء</span>
-                </div>
-                <div class="nav-item" data-section="tasks">
+                </li>
+                <li class="nav-item" data-section="tasks">
                     <span class="nav-icon">📋</span>
                     <span class="nav-text">المهام</span>
-                </div>
-                <div class="nav-item" data-section="decisions">
+                </li>
+                <li class="nav-item" data-section="decisions">
                     <span class="nav-icon">🗳️</span>
                     <span class="nav-text">القرارات</span>
-                </div>
-                <div class="nav-item" data-section="analytics">
+                </li>
+                <li class="nav-item" data-section="analytics">
                     <span class="nav-icon">📈</span>
                     <span class="nav-text">التحليلات</span>
-                </div>
-            </nav>
+                </li>
+            </ul>
             
             <div class="sidebar-footer">
                 <button class="run-meeting-btn" onclick="runManualMeeting()">
                     <span>▶️</span>
-                    <span>تشغيل اجتماع</span>
+                    تشغيل اجتماع
                 </button>
             </div>
-        </aside>
+        </nav>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
             <header class="content-header">
-                <div class="section-info">
-                    <h1 class="section-title" id="sectionTitle">نظرة عامة</h1>
+                <div class="header-info">
+                    <h2 class="section-title" id="sectionTitle">نظرة عامة</h2>
                     <p class="section-subtitle" id="sectionSubtitle">حالة النظام والإحصائيات العامة</p>
                 </div>
                 <div class="header-actions">
                     <button class="action-btn" onclick="refreshData()">
                         <span>🔄</span>
-                        <span>تحديث</span>
+                        تحديث
                     </button>
-                    <div class="status-indicator">
+                    <div class="status-indicator" id="systemStatus">
                         <span class="status-dot"></span>
                         <span class="status-text">نشط</span>
                     </div>
                 </div>
             </header>
 
-            <!-- Content Body -->
+            <!-- Content Sections -->
             <div class="content-body">
                 <!-- Overview Section -->
-                <section class="content-section active" id="overview-section">
+                <section id="overview-section" class="content-section active">
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-icon">📅</div>
@@ -107,25 +107,25 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="overview-grid">
                         <div class="overview-card">
-                            <h3>📅 آخر اجتماع</h3>
-                            <div class="overview-content" id="lastMeetingOverview">
-                                <div class="loading">جاري التحميل...</div>
+                            <h3>آخر اجتماع</h3>
+                            <div id="lastMeetingOverview" class="overview-content">
+                                جاري التحميل...
                             </div>
                         </div>
                         <div class="overview-card">
-                            <h3>📋 المهام النشطة</h3>
-                            <div class="overview-content" id="activeTasks">
-                                <div class="loading">جاري التحميل...</div>
+                            <h3>المهام النشطة</h3>
+                            <div id="activeTasks" class="overview-content">
+                                جاري التحميل...
                             </div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Meetings Section -->
-                <section class="content-section" id="meetings-section">
+                <section id="meetings-section" class="content-section">
                     <div class="section-controls">
                         <div class="search-box">
                             <input type="text" id="meetingSearch" placeholder="البحث في الاجتماعات...">
@@ -137,84 +137,78 @@
                             <option value="completed">المكتملة</option>
                         </select>
                     </div>
+                    
                     <div class="meetings-list" id="meetingsContainer">
-                        <div class="loading">جاري تحميل الاجتماعات...</div>
+                        <!-- سيتم ملؤها بـ JavaScript -->
                     </div>
                 </section>
 
                 <!-- Agents Section -->
-                <section class="content-section" id="agents-section">
+                <section id="agents-section" class="content-section">
                     <div class="agents-grid" id="agentsContainer">
-                        <div class="loading">جاري تحميل الوكلاء...</div>
+                        <!-- سيتم ملؤها بـ JavaScript -->
                     </div>
                 </section>
 
                 <!-- Tasks Section -->
-                <section class="content-section" id="tasks-section">
+                <section id="tasks-section" class="content-section">
                     <div class="tasks-board">
                         <div class="board-column">
-                            <div class="column-header">📝 قيد الانتظار</div>
-                            <div class="tasks-list" id="todoTasksList">
-                                <div class="loading">جاري التحميل...</div>
-                            </div>
+                            <h3 class="column-header">📝 قيد الانتظار</h3>
+                            <div class="tasks-list" id="todoTasksList"></div>
                         </div>
                         <div class="board-column">
-                            <div class="column-header">⚡ قيد التنفيذ</div>
-                            <div class="tasks-list" id="inProgressTasksList">
-                                <div class="loading">جاري التحميل...</div>
-                            </div>
+                            <h3 class="column-header">⚡ قيد التنفيذ</h3>
+                            <div class="tasks-list" id="inProgressTasksList"></div>
                         </div>
                         <div class="board-column">
-                            <div class="column-header">✅ مكتملة</div>
-                            <div class="tasks-list" id="doneTasksList">
-                                <div class="loading">جاري التحميل...</div>
-                            </div>
+                            <h3 class="column-header">✅ مكتملة</h3>
+                            <div class="tasks-list" id="doneTasksList"></div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Decisions Section -->
-                <section class="content-section" id="decisions-section">
+                <section id="decisions-section" class="content-section">
                     <div class="decisions-list" id="decisionsContainer">
-                        <div class="loading">جاري تحميل القرارات...</div>
+                        <!-- سيتم ملؤها بـ JavaScript -->
                     </div>
                 </section>
 
                 <!-- Analytics Section -->
-                <section class="content-section" id="analytics-section">
+                <section id="analytics-section" class="content-section">
                     <div class="analytics-grid">
                         <div class="chart-card">
-                            <h3>📊 نشاط الوكلاء</h3>
+                            <h3>نشاط الوكلاء</h3>
                             <div class="chart-container" id="agentActivityChart">
-                                <div class="loading">جاري التحميل...</div>
+                                <!-- رسم بياني بسيط -->
                             </div>
                         </div>
                         <div class="chart-card">
-                            <h3>📈 تقدم المهام</h3>
+                            <h3>تقدم المهام</h3>
                             <div class="chart-container" id="taskProgressChart">
-                                <div class="loading">جاري التحميل...</div>
+                                <!-- رسم بياني بسيط -->
                             </div>
                         </div>
                     </div>
                 </section>
             </div>
         </main>
-
     </div>
 
-    <!-- Modal -->
+    <!-- Meeting Details Modal -->
     <div class="modal" id="meetingModal">
-        <div class="modal-content">
+        <div class="modal-content large">
             <div class="modal-header">
                 <h3 id="modalTitle">تفاصيل الاجتماع</h3>
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body" id="modalBody">
-                <!-- سيتم ملؤها بـ JavaScript -->
+                <!-- سيتم ملؤها ديناميكياً -->
             </div>
         </div>
     </div>
 
-    <script src="script.js?v=2.0"></script>
+    <script src="script.js?v=3.0"></script>
 </body>
 </html>

@@ -1,0 +1,106 @@
+{
+  "todo": [
+    {
+      "id": "task_001",
+      "title": "إنشاء مواصفات تفصيلية لـ اقتراح 1",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052554_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:25:54.153001+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_002",
+      "title": "تحديد الفريق المسؤول عن التنفيذ",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052554_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:25:54.153012+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_003",
+      "title": "وضع جدول زمني للتطوير",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052554_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:25:54.153015+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_004",
+      "title": "إعداد بيئة التطوير والأدوات",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052554_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:25:54.153017+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_005",
+      "title": "بدء مرحلة التصميم والتخطيط",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052554_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:25:54.153019+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_006",
+      "title": "إنشاء مواصفات تفصيلية لـ اقتراح 1",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052606_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:26:06.311800+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_007",
+      "title": "تحديد الفريق المسؤول عن التنفيذ",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052606_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:26:06.311809+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_008",
+      "title": "وضع جدول زمني للتطوير",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052606_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:26:06.311812+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_009",
+      "title": "إعداد بيئة التطوير والأدوات",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052606_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:26:06.311813+00:00",
+      "priority": "medium",
+      "status": "todo"
+    },
+    {
+      "id": "task_010",
+      "title": "بدء مرحلة التصميم والتخطيط",
+      "description": "مهمة من قرار: اقتراح 1",
+      "decision_id": "decision_20260204_052606_001",
+      "assigned_to": "developer",
+      "created_at": "2026-02-04T03:26:06.311815+00:00",
+      "priority": "medium",
+      "status": "todo"
+    }
+  ],
+  "in_progress": [],
+  "done": []
+}

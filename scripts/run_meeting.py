@@ -12,6 +12,14 @@ from pathlib import Path
 # إضافة المسار الجذر للمشروع
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# تحميل متغيرات البيئة من ملف .env
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # إذا لم تكن مكتبة python-dotenv مثبتة، تجاهل
+    pass
+
 from core.config import Config
 from core.orchestrator import MeetingOrchestrator
 from core.logger import setup_logger

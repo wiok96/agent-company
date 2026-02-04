@@ -1,0 +1,42 @@
+{
+  "meetings": [
+    {
+      "session_id": "meeting_20260204_032554",
+      "timestamp": "2026-02-04T03:25:54.124941+00:00",
+      "agenda": "اجتماع تجريبي محلي",
+      "participants": [
+        "ceo",
+        "pm",
+        "cto",
+        "developer",
+        "qa",
+        "marketing",
+        "finance",
+        "critic",
+        "chair",
+        "memory"
+      ],
+      "decisions_count": 1,
+      "status": "completed"
+    },
+    {
+      "session_id": "meeting_20260204_032606",
+      "timestamp": "2026-02-04T03:26:06.284835+00:00",
+      "agenda": "اجتماع تجريبي محلي",
+      "participants": [
+        "ceo",
+        "pm",
+        "cto",
+        "developer",
+        "qa",
+        "marketing",
+        "finance",
+        "critic",
+        "chair",
+        "memory"
+      ],
+      "decisions_count": 1,
+      "status": "completed"
+    }
+  ]
+}

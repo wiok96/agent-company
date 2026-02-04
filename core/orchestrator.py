@@ -119,6 +119,12 @@ class MeetingOrchestrator:
             self._update_indexes(session_id, meeting_data, decisions, action_items)
             
             # حفظ في نظام الذاكرة الدائم
+            meeting_summary = {
+                "session_id": session_id,
+                "timestamp": meeting_data["timestamp"],
+                "agenda": meeting_data["agenda"],
+                "decisions_count": len(decisions)
+            }
             reflections = self.agent_manager.generate_all_self_reflections(meeting_summary)
             memory_success = self.memory_system.store_meeting_data(
                 session_id, meeting_data, transcript_data, decisions, reflections

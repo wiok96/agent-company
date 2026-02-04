@@ -12,6 +12,7 @@ from .config import Config, AGENT_ROLES
 from .logger import setup_logger, SecureLogger
 from .memory import MemorySystem
 from .artifact_validator import ArtifactValidator
+from .notification_manager import NotificationManager
 from agents.agent_manager import AgentManager
 from agents.base_agent import Message
 
@@ -46,10 +47,11 @@ class MeetingOrchestrator:
         self.config = config
         self.logger = SecureLogger(setup_logger("orchestrator"))
         
-        # إنشاء مدير الوكلاء ونظام الذاكرة ومدقق المخرجات
+        # إنشاء مدير الوكلاء ونظام الذاكرة ومدقق المخرجات ومدير الإشعارات
         self.agent_manager = AgentManager(config)
         self.memory_system = MemorySystem(config)
         self.artifact_validator = ArtifactValidator(config)
+        self.notification_manager = NotificationManager(config)
         
         # إنشاء المجلدات المطلوبة
         self._ensure_directories()
@@ -90,6 +92,15 @@ class MeetingOrchestrator:
             # التحقق من فشل التقييم النقدي
             if not transcript_data:
                 self.logger.error("❌ فشل الاجتماع بسبب عدم اجتياز التقييم النقدي")
+                
+                # إرسال إشعار فشل حرج
+                self.notification_manager.send_critical_notification(
+                    "🚨 فشل التقييم النقدي في الاجتماع",
+                    f"فشل اجتماع {session_id} بسبب عدم اجتياز التقييم النقدي المسبق. لا يمكن المتابعة للتصويت بدون تقييم نقدي شامل.",
+                    {"session_id": session_id, "failure_type": "critic_evaluation_failed"},
+                    session_id
+                )
+                
                 return MeetingResult(
                     success=False,
                     session_id=session_id,
@@ -148,6 +159,13 @@ class MeetingOrchestrator:
         except Exception as e:
             self.logger.error(f"❌ فشل الاجتماع {session_id}: {e}")
             self.logger.exception("تفاصيل الخطأ:")
+            
+            # إرسال إشعار فشل حرج
+            self.notification_manager.notify_meeting_failure(
+                session_id, 
+                str(e),
+                {"exception_type": type(e).__name__, "traceback": str(e)}
+            )
             
             return MeetingResult(
                 success=False,
@@ -292,7 +310,24 @@ class MeetingOrchestrator:
             # 7. إعلان النتيجة
             voting_result = self.agent_manager.calculate_voting_result(votes)
             
+            # حفظ تاريخ التصويت في نظام الذاكرة
+            voting_stored = self.memory_system.store_voting_history(
+                session_id, proposal_for_voting, votes, voting_result
+            )
+            
+            if voting_stored:
+                self.logger.info("✅ تم حفظ تاريخ التصويت في نظام الذاكرة")
+            else:
+                self.logger.warning("⚠️ فشل في حفظ تاريخ التصويت")
+            
             if voting_result['outcome'] == 'failed_quorum':
+                # إرسال إشعار فشل النصاب القانوني
+                self.notification_manager.notify_voting_failure(
+                    session_id,
+                    voting_result.get('failure_reason', 'فشل في الوصول للنصاب القانوني المطلوب'),
+                    voting_result
+                )
+                
                 result_msg = self._create_agent_message(
                     "chair",
                     {"meeting_phase": "quorum_failure"},
@@ -573,6 +608,15 @@ class MeetingOrchestrator:
         votes = self.agent_manager.conduct_voting(proposal_for_voting)
         voting_result = self.agent_manager.calculate_voting_result(votes)
         
+        # حفظ تاريخ التصويت في نظام الذاكرة (للقرارات المستخرجة)
+        voting_stored = self.memory_system.store_voting_history(
+            f"decision_extraction_{datetime.now().strftime('%Y%m%d_%H%M%S')}", 
+            proposal_for_voting, votes, voting_result
+        )
+        
+        if voting_stored:
+            self.logger.info("✅ تم حفظ تاريخ التصويت للقرار المستخرج")
+        
         # تحليل ROI بسيط
         roi_analysis = {
             "estimated_cost": 20000,
@@ -772,7 +816,7 @@ class MeetingOrchestrator:
         self.logger.info(f"✅ تم تحديث فهرس الاجتماعات: {index_file}")
     
     def _update_board_tasks(self, decisions: List[Dict[str, Any]], action_items: List[str]):
-        """تحديث لوحة المهام"""
+        """تحديث لوحة المهام مع استخراج ذكي للمهام وتعيين المسؤولين"""
         board_file = Path(self.config.BOARD_DIR) / "tasks.json"
         
         # قراءة اللوحة الحالية أو إنشاء جديدة
@@ -783,26 +827,329 @@ class MeetingOrchestrator:
             board_data = {
                 "todo": [],
                 "in_progress": [],
-                "done": []
+                "done": [],
+                "metadata": {
+                    "last_updated": datetime.now(timezone.utc).isoformat(),
+                    "total_tasks": 0,
+                    "projects": {}
+                }
             }
         
-        # إضافة المهام الجديدة
+        # تجنب إضافة مهام مكررة
+        existing_task_titles = {task["title"] for task in board_data["todo"] + board_data["in_progress"] + board_data["done"]}
+        
+        new_tasks_added = 0
+        
+        # استخراج المهام من القرارات
         for decision in decisions:
+            project_title = decision.get("title", "مشروع غير محدد")
+            decision_outcome = decision.get("outcome", "unknown")
+            
+            # تخطي القرارات المرفوضة أو الفاشلة
+            if decision_outcome in ["rejected", "failed_quorum"]:
+                continue
+            
+            # استخراج المهام من عناصر العمل
             for item in decision.get("action_items", []):
+                # تجنب المهام المكررة
+                if item in existing_task_titles:
+                    continue
+                
+                # تحديد المسؤول بناءً على نوع المهمة
+                assigned_agent = self._determine_task_assignee(item)
+                
+                # تحديد الأولوية بناءً على نوع المهمة
+                priority = self._determine_task_priority(item)
+                
+                # تحديد الفئة/المشروع
+                project_category = self._extract_project_category(project_title)
+                
                 task = {
-                    "id": f"task_{len(board_data['todo']) + 1:03d}",
+                    "id": f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{new_tasks_added + 1:03d}",
                     "title": item,
-                    "description": f"مهمة من قرار: {decision['title']}",
+                    "description": f"مهمة من قرار: {project_title}",
+                    "project": project_title,
+                    "project_category": project_category,
                     "decision_id": decision["id"],
-                    "assigned_to": "developer",  # افتراضي في V0
+                    "assigned_to": assigned_agent,
                     "created_at": datetime.now(timezone.utc).isoformat(),
-                    "priority": "medium",
-                    "status": "todo"
+                    "priority": priority,
+                    "status": "todo",
+                    "estimated_hours": self._estimate_task_hours(item),
+                    "tags": self._generate_task_tags(item, project_title),
+                    "dependencies": [],
+                    "progress": 0
                 }
+                
                 board_data["todo"].append(task)
+                existing_task_titles.add(item)
+                new_tasks_added += 1
+        
+        # تحديث الإحصائيات
+        if "metadata" not in board_data:
+            board_data["metadata"] = {
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "total_tasks": 0,
+                "projects": {}
+            }
+        
+        board_data["metadata"]["last_updated"] = datetime.now(timezone.utc).isoformat()
+        board_data["metadata"]["total_tasks"] = len(board_data["todo"]) + len(board_data["in_progress"]) + len(board_data["done"])
+        
+        # تحديث إحصائيات المشاريع
+        project_stats = {}
+        for task in board_data["todo"] + board_data["in_progress"] + board_data["done"]:
+            project = task.get("project", "غير محدد")
+            if project not in project_stats:
+                project_stats[project] = {"todo": 0, "in_progress": 0, "done": 0, "total": 0}
+            
+            status = task.get("status", "todo")
+            project_stats[project][status] += 1
+            project_stats[project]["total"] += 1
+        
+        board_data["metadata"]["projects"] = project_stats
         
         # حفظ اللوحة المحدثة
         with open(board_file, 'w', encoding='utf-8') as f:
             json.dump(board_data, f, ensure_ascii=False, indent=2)
         
-        self.logger.info(f"✅ تم تحديث لوحة المهام: {board_file}")
+        self.logger.info(f"✅ تم تحديث لوحة المهام: {board_file} (أضيف {new_tasks_added} مهمة جديدة)")
+    
+    def _determine_task_assignee(self, task_title: str) -> str:
+        """تحديد المسؤول عن المهمة بناءً على محتواها"""
+        task_lower = task_title.lower()
+        
+        # مهام التطوير والبرمجة
+        if any(keyword in task_lower for keyword in [
+            'مستودع', 'github', 'كود', 'برمجة', 'تطوير', 'api', 'قاعدة بيانات', 
+            'واجهة', 'نموذج أولي', 'اختبار', 'تطبيق', 'نظام'
+        ]):
+            return "developer"
+        
+        # مهام إدارة المشاريع
+        elif any(keyword in task_lower for keyword in [
+            'جدول زمني', 'تخطيط', 'فريق', 'إدارة', 'تنسيق', 'مراحل', 'متابعة'
+        ]):
+            return "pm"
+        
+        # مهام التسويق
+        elif any(keyword in task_lower for keyword in [
+            'تسويق', 'عملاء', 'ترويج', 'إعلان', 'سوق', 'مبيعات'
+        ]):
+            return "marketing"
+        
+        # مهام ضمان الجودة
+        elif any(keyword in task_lower for keyword in [
+            'اختبار', 'جودة', 'فحص', 'تحقق', 'مراجعة'
+        ]):
+            return "qa"
+        
+        # مهام مالية
+        elif any(keyword in task_lower for keyword in [
+            'ميزانية', 'تكلفة', 'مالي', 'استثمار', 'عائد'
+        ]):
+            return "finance"
+        
+        # مهام تقنية متقدمة
+        elif any(keyword in task_lower for keyword in [
+            'أمان', 'بنية', 'معمارية', 'تقني'
+        ]):
+            return "cto"
+        
+        # افتراضي
+        else:
+            return "developer"
+    
+    def _determine_task_priority(self, task_title: str) -> str:
+        """تحديد أولوية المهمة بناءً على محتواها"""
+        task_lower = task_title.lower()
+        
+        # أولوية عالية
+        if any(keyword in task_lower for keyword in [
+            'أمان', 'حرج', 'عاجل', 'أساسي', 'مطلوب فوراً'
+        ]):
+            return "high"
+        
+        # أولوية منخفضة
+        elif any(keyword in task_lower for keyword in [
+            'توثيق', 'تحسين', 'اختياري', 'إضافي'
+        ]):
+            return "low"
+        
+        # أولوية متوسطة (افتراضي)
+        else:
+            return "medium"
+    
+    def _extract_project_category(self, project_title: str) -> str:
+        """استخراج فئة المشروع"""
+        title_lower = project_title.lower()
+        
+        if any(keyword in title_lower for keyword in ['ذكاء اصطناعي', 'ai', 'تعلم آلة']):
+            return "AI/ML"
+        elif any(keyword in title_lower for keyword in ['تجارة إلكترونية', 'متجر', 'مبيعات']):
+            return "E-Commerce"
+        elif any(keyword in title_lower for keyword in ['إدارة', 'موارد بشرية', 'مواهب']):
+            return "Management"
+        elif any(keyword in title_lower for keyword in ['منصة', 'نظام', 'تطبيق']):
+            return "Platform"
+        else:
+            return "General"
+    
+    def _estimate_task_hours(self, task_title: str) -> int:
+        """تقدير ساعات العمل المطلوبة للمهمة"""
+        task_lower = task_title.lower()
+        
+        # مهام كبيرة (40+ ساعة)
+        if any(keyword in task_lower for keyword in [
+            'تطوير نظام', 'بناء منصة', 'تصميم قاعدة بيانات'
+        ]):
+            return 40
+        
+        # مهام متوسطة (20-30 ساعة)
+        elif any(keyword in task_lower for keyword in [
+            'تطوير', 'إنشاء', 'بناء', 'تصميم'
+        ]):
+            return 24
+        
+        # مهام صغيرة (8-16 ساعة)
+        elif any(keyword in task_lower for keyword in [
+            'اختبار', 'مراجعة', 'توثيق', 'إعداد'
+        ]):
+            return 8
+        
+        # افتراضي
+        else:
+            return 16
+    
+    def _generate_task_tags(self, task_title: str, project_title: str) -> List[str]:
+        """توليد علامات للمهمة"""
+        tags = []
+        task_lower = task_title.lower()
+        
+        # علامات تقنية
+        if 'github' in task_lower:
+            tags.append('git')
+        if any(keyword in task_lower for keyword in ['api', 'واجهة برمجة']):
+            tags.append('api')
+        if any(keyword in task_lower for keyword in ['قاعدة بيانات', 'database']):
+            tags.append('database')
+        if any(keyword in task_lower for keyword in ['اختبار', 'test']):
+            tags.append('testing')
+        if any(keyword in task_lower for keyword in ['أمان', 'security']):
+            tags.append('security')
+        
+        # علامات المشروع
+        if 'ذكاء اصطناعي' in project_title.lower():
+            tags.append('ai')
+        if 'تجارة إلكترونية' in project_title.lower():
+            tags.append('ecommerce')
+        
+        return tags
+    
+    def update_task_status(self, task_id: str, new_status: str, assigned_to: str = None) -> bool:
+        """تحديث حالة المهمة"""
+        board_file = Path(self.config.BOARD_DIR) / "tasks.json"
+        
+        if not board_file.exists():
+            self.logger.error("ملف لوحة المهام غير موجود")
+            return False
+        
+        try:
+            with open(board_file, 'r', encoding='utf-8') as f:
+                board_data = json.load(f)
+            
+            # البحث عن المهمة في جميع الحالات
+            task_found = False
+            task_to_move = None
+            source_status = None
+            
+            for status in ["todo", "in_progress", "done"]:
+                for i, task in enumerate(board_data[status]):
+                    if task["id"] == task_id:
+                        task_to_move = board_data[status].pop(i)
+                        source_status = status
+                        task_found = True
+                        break
+                if task_found:
+                    break
+            
+            if not task_found:
+                self.logger.error(f"المهمة غير موجودة: {task_id}")
+                return False
+            
+            # تحديث بيانات المهمة
+            task_to_move["status"] = new_status
+            task_to_move["updated_at"] = datetime.now(timezone.utc).isoformat()
+            
+            if assigned_to:
+                task_to_move["assigned_to"] = assigned_to
+            
+            # تحديث التقدم بناءً على الحالة
+            if new_status == "todo":
+                task_to_move["progress"] = 0
+            elif new_status == "in_progress":
+                task_to_move["progress"] = 50
+            elif new_status == "done":
+                task_to_move["progress"] = 100
+                task_to_move["completed_at"] = datetime.now(timezone.utc).isoformat()
+            
+            # إضافة المهمة للحالة الجديدة
+            if new_status in board_data:
+                board_data[new_status].append(task_to_move)
+            else:
+                self.logger.error(f"حالة غير صحيحة: {new_status}")
+                return False
+            
+            # تحديث الإحصائيات
+            board_data["metadata"]["last_updated"] = datetime.now(timezone.utc).isoformat()
+            
+            # حفظ التحديثات
+            with open(board_file, 'w', encoding='utf-8') as f:
+                json.dump(board_data, f, ensure_ascii=False, indent=2)
+            
+            self.logger.info(f"✅ تم تحديث حالة المهمة {task_id} من {source_status} إلى {new_status}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"فشل في تحديث حالة المهمة {task_id}: {e}")
+            return False
+    
+    def get_tasks_by_project(self, project_name: str = None) -> Dict[str, List[Dict[str, Any]]]:
+        """الحصول على المهام مجمعة حسب المشروع"""
+        board_file = Path(self.config.BOARD_DIR) / "tasks.json"
+        
+        if not board_file.exists():
+            return {}
+        
+        try:
+            with open(board_file, 'r', encoding='utf-8') as f:
+                board_data = json.load(f)
+            
+            if project_name:
+                # إرجاع مهام مشروع محدد
+                project_tasks = {"todo": [], "in_progress": [], "done": []}
+                
+                for status in ["todo", "in_progress", "done"]:
+                    for task in board_data[status]:
+                        if task.get("project", "") == project_name:
+                            project_tasks[status].append(task)
+                
+                return project_tasks
+            else:
+                # إرجاع جميع المهام مجمعة حسب المشروع
+                projects = {}
+                
+                for status in ["todo", "in_progress", "done"]:
+                    for task in board_data[status]:
+                        project = task.get("project", "غير محدد")
+                        
+                        if project not in projects:
+                            projects[project] = {"todo": [], "in_progress": [], "done": []}
+                        
+                        projects[project][status].append(task)
+                
+                return projects
+                
+        except Exception as e:
+            self.logger.error(f"فشل في استرجاع المهام: {e}")
+            return {}

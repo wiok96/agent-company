@@ -250,14 +250,42 @@ class SimpleAgent(BaseAgent):
                 error_msg = f"API call failed: {response.status_code}"
                 if response.text:
                     error_msg += f" - {response.text}"
+                
+                # محاولة إرسال إشعار فشل API (إذا كان متوفراً)
+                self._notify_ai_api_failure(error_msg, context)
+                
                 raise Exception(error_msg)
                 
         except requests.exceptions.Timeout:
-            raise Exception("API request timeout")
+            error_msg = "API request timeout"
+            self._notify_ai_api_failure(error_msg, context)
+            raise Exception(error_msg)
         except requests.exceptions.RequestException as e:
-            raise Exception(f"API request failed: {str(e)}")
+            error_msg = f"API request failed: {str(e)}"
+            self._notify_ai_api_failure(error_msg, context)
+            raise Exception(error_msg)
         except Exception as e:
-            raise Exception(f"AI response generation failed: {str(e)}")
+            error_msg = f"AI response generation failed: {str(e)}"
+            self._notify_ai_api_failure(error_msg, context)
+            raise Exception(error_msg)
+    
+    def _notify_ai_api_failure(self, error_msg: str, context: Dict[str, Any]):
+        """إشعار فشل API الذكاء الاصطناعي (إذا كان متوفراً)"""
+        try:
+            # محاولة الحصول على مدير الإشعارات من السياق العام
+            session_id = context.get('session_id', 'unknown')
+            
+            # هذا سيعمل فقط إذا كان مدير الإشعارات متوفراً في النظام
+            from core.config import Config
+            from core.notification_manager import NotificationManager
+            
+            config = Config()
+            notification_manager = NotificationManager(config)
+            notification_manager.notify_ai_api_failure(session_id, error_msg)
+            
+        except Exception:
+            # تجاهل أخطاء الإشعارات لتجنب تعطيل النظام
+            pass
     
     def _clean_ai_response(self, response: str, context: Dict[str, Any]) -> str:
         """تنظيف وتحسين رد الذكاء الاصطناعي"""

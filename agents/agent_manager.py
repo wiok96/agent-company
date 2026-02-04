@@ -276,8 +276,25 @@ class AgentManager:
         return votes
     
     def calculate_voting_result(self, votes: Dict[str, str]) -> Dict[str, Any]:
-        """حساب نتيجة التصويت"""
-        # حساب الأوزان
+        """حساب نتيجة التصويت مع إنفاذ النصاب القانوني"""
+        
+        # التحقق من النصاب القانوني أولاً (7/10 وكلاء كحد أدنى)
+        voting_agents_count = len([agent_id for agent_id in votes.keys() if VOTING_WEIGHTS[agent_id] > 0])
+        
+        if voting_agents_count < self.config.MIN_VOTING_PARTICIPANTS:
+            return {
+                "outcome": "failed_quorum",
+                "failure_reason": f"عدد المصوتين ({voting_agents_count}) أقل من النصاب القانوني المطلوب ({self.config.MIN_VOTING_PARTICIPANTS})",
+                "total_votes": len(votes),
+                "voting_agents_count": voting_agents_count,
+                "required_quorum": self.config.MIN_VOTING_PARTICIPANTS,
+                "vote_breakdown": {},
+                "approval_percentage": 0,
+                "total_weight": 0,
+                "positive_weight": 0
+            }
+        
+        # حساب الأوزان (فقط بعد اجتياز النصاب القانوني)
         total_weight = 0
         positive_weight = 0
         
@@ -303,6 +320,8 @@ class AgentManager:
             "outcome": outcome,
             "approval_percentage": approval_percentage,
             "total_votes": len(votes),
+            "voting_agents_count": voting_agents_count,
+            "required_quorum": self.config.MIN_VOTING_PARTICIPANTS,
             "vote_breakdown": vote_counts,
             "total_weight": total_weight,
             "positive_weight": positive_weight

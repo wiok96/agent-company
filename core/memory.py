@@ -106,6 +106,107 @@ class MemorySystem:
         except Exception as e:
             self.logger.error(f"فشل في حفظ فهرس الذاكرة: {e}")
     
+    def store_voting_history(self, session_id: str, proposal: Dict[str, Any], 
+                           votes: Dict[str, str], voting_result: Dict[str, Any]) -> bool:
+        """حفظ تاريخ التصويت في الذاكرة الدائمة"""
+        try:
+            self.logger.info(f"🗳️ حفظ تاريخ التصويت: {session_id}")
+            
+            # إنشاء مجلد التصويت إذا لم يكن موجوداً
+            voting_path = self.base_path / "voting"
+            voting_path.mkdir(exist_ok=True)
+            
+            # إنشاء إدخال تاريخ التصويت
+            voting_entry = MemoryEntry(
+                id=f"vote_{session_id}_{datetime.now().strftime('%H%M%S')}",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                type="voting",
+                content={
+                    "session_id": session_id,
+                    "proposal": proposal,
+                    "votes": votes,
+                    "voting_result": voting_result,
+                    "voting_statistics": self._calculate_voting_statistics(votes, voting_result)
+                },
+                metadata={
+                    "session_id": session_id,
+                    "outcome": voting_result.get("outcome", "unknown"),
+                    "total_votes": len(votes),
+                    "approval_percentage": voting_result.get("approval_percentage", 0)
+                },
+                tags=["voting", session_id, voting_result.get("outcome", "unknown")]
+            )
+            
+            self._store_entry(voting_entry, "voting")
+            
+            # تحديث الإحصائيات
+            if "voting" not in self.memory_index["categories"]:
+                self.memory_index["categories"]["voting"] = 0
+            
+            self.memory_index["categories"]["voting"] += 1
+            self.memory_index["entries_count"] += 1
+            
+            self._save_memory_index()
+            
+            self.logger.info(f"✅ تم حفظ تاريخ التصويت {session_id} بنجاح")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ فشل في حفظ تاريخ التصويت {session_id}: {e}")
+            return False
+    
+    def _calculate_voting_statistics(self, votes: Dict[str, str], voting_result: Dict[str, Any]) -> Dict[str, Any]:
+        """حساب إحصائيات التصويت"""
+        from core.config import VOTING_WEIGHTS
+        
+        # إحصائيات الأصوات
+        vote_distribution = {}
+        weighted_distribution = {}
+        
+        for agent_id, vote in votes.items():
+            weight = VOTING_WEIGHTS.get(agent_id, 0)
+            
+            # توزيع الأصوات
+            vote_distribution[vote] = vote_distribution.get(vote, 0) + 1
+            
+            # التوزيع المرجح
+            weighted_distribution[vote] = weighted_distribution.get(vote, 0) + weight
+        
+        return {
+            "vote_distribution": vote_distribution,
+            "weighted_distribution": weighted_distribution,
+            "total_weight": voting_result.get("total_weight", 0),
+            "positive_weight": voting_result.get("positive_weight", 0),
+            "approval_percentage": voting_result.get("approval_percentage", 0),
+            "quorum_met": voting_result.get("outcome") != "failed_quorum",
+            "voting_agents_count": voting_result.get("voting_agents_count", 0)
+        }
+    
+    def get_voting_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """استرجاع تاريخ التصويت"""
+        try:
+            voting_path = self.base_path / "voting"
+            if not voting_path.exists():
+                return []
+            
+            voting_files = list(voting_path.glob("*.json"))
+            voting_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+            
+            voting_history = []
+            for file_path in voting_files[:limit]:
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        entry_data = json.load(f)
+                        voting_history.append(entry_data)
+                except Exception as e:
+                    self.logger.warning(f"فشل في قراءة ملف التصويت {file_path}: {e}")
+            
+            return voting_history
+            
+        except Exception as e:
+            self.logger.error(f"فشل في استرجاع تاريخ التصويت: {e}")
+            return []
+
     def store_meeting_data(self, session_id: str, meeting_data: Dict[str, Any], 
                           transcript: List[Dict[str, Any]], decisions: List[Dict[str, Any]], 
                           reflections: Dict[str, str]) -> bool:

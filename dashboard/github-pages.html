@@ -1,211 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم AACS V0</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-</head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <h1 class="title">🤖 نظام الشركة البرمجية الذاتية</h1>
-                <p class="subtitle">AACS V0 - Autonomous AI Company System (GitHub Pages)</p>
-                <div class="status-indicator" id="systemStatus">
-                    <span class="status-dot"></span>
-                    <span class="status-text">جاري التحميل...</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- GitHub Pages Notice -->
-        <div class="card" style="background: #e6fffa; border-left: 4px solid #38b2ac;">
-            <h3 style="color: #38b2ac; margin-bottom: 10px;">🌐 GitHub Pages</h3>
-            <p style="color: #234e52;">
-                هذه النسخة تعمل على GitHub Pages. إذا لم تر التحديثات الجديدة:
-            </p>
-            <div style="margin-top: 10px;">
-                <button class="btn secondary" onclick="clearBrowserCache()" style="margin-left: 10px;">
-                    🗑️ مسح ذاكرة المتصفح
-                </button>
-                <button class="btn secondary" onclick="forceRefresh()">
-                    🔄 تحديث قسري
-                </button>
-            </div>
-        </div>
-
-        <!-- Main Dashboard -->
-        <main class="main-content">
-            <!-- Quick Actions -->
-            <section class="card quick-actions">
-                <h2 class="card-title">🚀 الإجراءات السريعة</h2>
-                <div class="actions-grid">
-                    <button class="action-btn primary" id="runMeetingBtn" onclick="runManualMeeting()">
-                        <span class="btn-icon">▶️</span>
-                        <span class="btn-text">تشغيل اجتماع الآن</span>
-                    </button>
-                    <button class="action-btn secondary" onclick="refreshData()">
-                        <span class="btn-icon">🔄</span>
-                        <span class="btn-text">تحديث البيانات</span>
-                    </button>
-                    <button class="action-btn secondary" onclick="viewLogs()">
-                        <span class="btn-icon">📋</span>
-                        <span class="btn-text">عرض السجلات</span>
-                    </button>
-                </div>
-            </section>
-
-            <!-- System Status -->
-            <section class="card system-status">
-                <h2 class="card-title">📊 حالة النظام</h2>
-                <div class="status-grid">
-                    <div class="status-item">
-                        <div class="status-label">آخر اجتماع</div>
-                        <div class="status-value" id="lastMeeting">جاري التحميل...</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">الاجتماع القادم</div>
-                        <div class="status-value" id="nextMeeting">جاري التحميل...</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">حالة التشغيل</div>
-                        <div class="status-value" id="runStatus">GitHub Pages</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">عدد الوكلاء</div>
-                        <div class="status-value">10 وكلاء</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Recent Meetings -->
-            <section class="card recent-meetings">
-                <h2 class="card-title">📅 الاجتماعات الأخيرة</h2>
-                <div class="meetings-list" id="meetingsList">
-                    <div class="loading">جاري تحميل الاجتماعات...</div>
-                </div>
-            </section>
-
-            <!-- Task Board -->
-            <section class="card task-board">
-                <div class="task-board-header">
-                    <h2 class="card-title">📋 لوحة المهام</h2>
-                    <div class="task-filters">
-                        <button class="filter-btn active" data-filter="all">🔍 الكل</button>
-                        <button class="filter-btn" data-filter="project">📁 حسب المشروع</button>
-                        <button class="filter-btn" data-filter="todo">📝 قيد الانتظار</button>
-                        <button class="filter-btn" data-filter="in_progress">⚡ قيد التنفيذ</button>
-                        <button class="filter-btn" data-filter="done">✅ مكتملة</button>
-                    </div>
-                </div>
-                <div class="board-columns" id="taskBoardContainer">
-                    <div class="board-column">
-                        <h3 class="column-title">📝 قيد الانتظار</h3>
-                        <div class="tasks-list" id="todoTasks">
-                            <div class="loading">جاري التحميل...</div>
-                        </div>
-                    </div>
-                    <div class="board-column">
-                        <h3 class="column-title">⚡ قيد التنفيذ</h3>
-                        <div class="tasks-list" id="inProgressTasks">
-                            <div class="loading">جاري التحميل...</div>
-                        </div>
-                    </div>
-                    <div class="board-column">
-                        <h3 class="column-title">✅ مكتملة</h3>
-                        <div class="tasks-list" id="doneTasks">
-                            <div class="loading">جاري التحميل...</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Agents Status -->
-            <section class="card agents-status">
-                <h2 class="card-title">🤖 حالة الوكلاء</h2>
-                <div class="agents-grid" id="agentsGrid">
-                    <!-- سيتم ملؤها بـ JavaScript -->
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>&copy; 2024 نظام الشركة البرمجية الذاتية - AACS V0</p>
-            <p>آخر تحديث: <span id="lastUpdate">جاري التحميل...</span></p>
-        </footer>
-    </div>
-
-    <!-- Modal for Manual Meeting -->
-    <div class="modal" id="meetingModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🚀 تشغيل اجتماع يدوي</h3>
-                <button class="close-btn" onclick="closeMeetingModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>سيتم إنشاء اجتماع تجريبي مع مهام جديدة.</p>
-                <div class="form-group">
-                    <label for="meetingAgenda">أجندة الاجتماع:</label>
-                    <input type="text" id="meetingAgenda" value="اجتماع يدوي من GitHub Pages" />
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="debugMode" />
-                        تفعيل وضع التصحيح
-                    </label>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn secondary" onclick="closeMeetingModal()">إلغاء</button>
-                <button class="btn primary" onclick="confirmRunMeeting()">تشغيل الاجتماع</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-    <script>
-        // GitHub Pages specific functions
-        function clearBrowserCache() {
-            if ('caches' in window) {
-                caches.keys().then(function(names) {
-                    names.forEach(function(name) {
-                        caches.delete(name);
-                    });
-                });
-            }
-            
-            // Clear localStorage
-            localStorage.clear();
-            sessionStorage.clear();
-            
-            showNotification('تم مسح ذاكرة المتصفح', 'success');
-            
-            setTimeout(() => {
-                location.reload(true);
-            }, 1000);
-        }
-        
-        function forceRefresh() {
-            // Force refresh with cache bypass
-            window.location.reload(true);
-        }
-        
-        // Override CONFIG for GitHub Pages
-        if (window.location.hostname.includes('github.io')) {
-            CONFIG.GITHUB_REPO = window.location.pathname.split('/')[1];
-            CONFIG.GITHUB_USER = window.location.hostname.split('.')[0];
-            
-            console.log('🌐 GitHub Pages detected:', CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO);
-        }
-    </script>
-</body>
-</html>

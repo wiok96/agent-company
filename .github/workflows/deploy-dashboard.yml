@@ -33,10 +33,7 @@ jobs:
       - name: Prepare Dashboard
         run: |
           # Copy dashboard files to root for GitHub Pages
-          cp -r dashboard/* .
-          
-          # Use the GitHub Pages specific HTML file
-          cp github-pages.html index.html
+          cp dashboard/index.html index.html
           
           # Create a simple redirect for the original dashboard folder
           mkdir -p dashboard

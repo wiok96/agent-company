@@ -1120,6 +1120,25 @@
       ],
       "decisions_count": 1,
       "status": "completed"
+    },
+    {
+      "session_id": "meeting_20260408_015343",
+      "timestamp": "2026-04-08T01:53:43.838164+00:00",
+      "agenda": "اجتماع دوري مجدول",
+      "participants": [
+        "ceo",
+        "pm",
+        "cto",
+        "developer",
+        "qa",
+        "marketing",
+        "finance",
+        "critic",
+        "chair",
+        "memory"
+      ],
+      "decisions_count": 1,
+      "status": "completed"
     }
   ]
 }

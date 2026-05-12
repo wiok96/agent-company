@@ -1766,6 +1766,25 @@
       ],
       "decisions_count": 1,
       "status": "completed"
+    },
+    {
+      "session_id": "meeting_20260512_022854",
+      "timestamp": "2026-05-12T02:28:54.634859+00:00",
+      "agenda": "اجتماع دوري مجدول",
+      "participants": [
+        "ceo",
+        "pm",
+        "cto",
+        "developer",
+        "qa",
+        "marketing",
+        "finance",
+        "critic",
+        "chair",
+        "memory"
+      ],
+      "decisions_count": 1,
+      "status": "completed"
     }
   ]
 }

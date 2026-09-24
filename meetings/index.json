@@ -4331,6 +4331,25 @@
       ],
       "decisions_count": 1,
       "status": "completed"
+    },
+    {
+      "session_id": "meeting_20260924_023845",
+      "timestamp": "2026-09-24T02:38:45.162992+00:00",
+      "agenda": "اجتماع دوري مجدول",
+      "participants": [
+        "ceo",
+        "pm",
+        "cto",
+        "developer",
+        "qa",
+        "marketing",
+        "finance",
+        "critic",
+        "chair",
+        "memory"
+      ],
+      "decisions_count": 1,
+      "status": "completed"
     }
   ]
 }
